@@ -1,0 +1,11 @@
+{
+  "name": "bookreader-e2e",
+  "private": true,
+  "description": "End-to-end browser tests for the bookreader app. See run-all.js header for usage.",
+  "scripts": {
+    "test": "node run-all.js"
+  },
+  "dependencies": {
+    "playwright": "^1.63.0"
+  }
+}

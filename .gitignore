@@ -1,0 +1,6 @@
+target/
+bookreader.db
+*.db-journal
+e2e/node_modules/
+backend/
+

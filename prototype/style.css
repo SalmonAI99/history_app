@@ -1,0 +1,49 @@
+body {
+    margin: 0;
+    background: #f5f1e8;
+    color: #29251f;
+    font-family: Georgia, serif;
+}
+
+header {
+    padding: 20px;
+    text-align: center;
+    background: #29251f;
+    color: white;
+}
+
+.reader {
+    max-width: 750px;
+    margin: 50px auto;
+    padding: 30px;
+}
+
+#chapter-title {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+#book-content {
+    font-size: 20px;
+    line-height: 1.8;
+}
+
+.navigation {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 50px;
+}
+
+button {
+    padding: 10px 18px;
+    border: none;
+    border-radius: 6px;
+    background: #29251f;
+    color: white;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #514a40;
+}

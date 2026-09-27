@@ -1,0 +1,372 @@
+// Your original style.css, extended with phone-friendly touches.
+// (This is SCSS, but plain CSS is valid SCSS — everything you know works.)
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: #f5f1e8;
+    color: #29251f;
+    font-family: Georgia, serif;
+}
+
+header {
+    padding: 20px;
+    text-align: center;
+    background: #29251f;
+    color: white;
+}
+
+header a {
+    color: white;
+    text-decoration: none;
+}
+
+// Header layout: title left, user nav right
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 22px;
+}
+
+.user-nav {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 15px;
+}
+
+.user-nav .username {
+    font-weight: bold;
+}
+
+.user-nav button {
+    font-size: 14px;
+    padding: 8px 14px;
+    min-height: 0;
+}
+
+// The login / signup page
+.auth-form {
+    max-width: 380px;
+    margin: 20px auto;
+}
+
+.auth-form h2 {
+    text-align: center;
+}
+
+.auth-form label {
+    display: block;
+    margin: 16px 0 6px;
+    font-size: 15px;
+}
+
+.auth-form input {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #c9bfa9;
+    border-radius: 6px;
+    background: #fffdf7;
+    color: inherit;
+}
+
+.auth-form button[type="submit"] {
+    width: 100%;
+    margin-top: 18px;
+}
+
+.auth-switch {
+    text-align: center;
+    margin-top: 18px;
+    font-size: 15px;
+}
+
+.auth-switch button {
+    background: none;
+    border: none;
+    color: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: 15px;
+    min-height: 0;
+    padding: 0;
+}
+
+.error {
+    color: #a03030;
+    text-align: center;
+}
+
+.ok {
+    color: #2a7a3a;
+    text-align: center;
+}
+
+// ---------- Stage 8: the public site ----------
+
+header {
+    flex-wrap: wrap;
+}
+
+.site-nav {
+    display: flex;
+    gap: 16px;
+    font-size: 16px;
+}
+
+.site-nav a:hover {
+    text-decoration: underline;
+}
+
+// Home page hero
+.hero {
+    text-align: center;
+    padding: 40px 16px;
+}
+
+.hero h2 {
+    font-size: 34px;
+    margin-bottom: 10px;
+}
+
+.hero .button {
+    margin-top: 16px;
+    font-size: 18px;
+    padding: 14px 28px;
+}
+
+// Feature cards
+.features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin: 30px 0;
+}
+
+.card {
+    background: #fffdf7;
+    border: 1px solid #ddd4c3;
+    border-radius: 10px;
+    padding: 18px;
+}
+
+.card h3 {
+    margin-top: 0;
+}
+
+// Post lists (blog, news, home "latest")
+.post-list {
+    list-style: none;
+    padding: 0;
+    font-size: 19px;
+}
+
+.post-list li {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid #ddd4c3;
+}
+
+.post-list a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.post-list a:hover {
+    text-decoration: underline;
+}
+
+.tag {
+    font-size: 12px;
+    background: #29251f;
+    color: #f5f1e8;
+    padding: 2px 8px;
+    border-radius: 10px;
+    text-transform: uppercase;
+}
+
+.date {
+    margin-left: auto;
+    font-size: 13px;
+    color: #847b6b;
+    white-space: nowrap;
+}
+
+// A single post (rendered Markdown)
+.post-content {
+    font-size: 18px;
+    line-height: 1.9;
+}
+
+.post-content h2 {
+    margin-top: 26px;
+}
+
+.teacher-card {
+    background: #fffdf7;
+    border: 1px solid #ddd4c3;
+    border-radius: 10px;
+    padding: 22px;
+    font-size: 18px;
+    line-height: 1.8;
+}
+
+// Admin page
+.post-form {
+    background: #fffdf7;
+    border: 1px solid #ddd4c3;
+    border-radius: 10px;
+    padding: 20px;
+}
+
+.post-form label {
+    display: block;
+    margin: 14px 0 6px;
+    font-size: 15px;
+}
+
+.post-form input,
+.post-form select,
+.post-form textarea {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    font-family: inherit;
+    border: 1px solid #c9bfa9;
+    border-radius: 6px;
+    background: white;
+    color: inherit;
+}
+
+.post-form button[type="submit"] {
+    margin-top: 16px;
+}
+
+.admin-list form {
+    margin-left: auto;
+}
+
+.admin-list button {
+    padding: 5px 12px;
+    min-height: 0;
+    font-size: 13px;
+}
+
+main {
+    max-width: 750px;
+    margin: 0 auto;
+    padding: 30px 20px;
+}
+
+#chapter-title {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+#book-content {
+    font-size: 20px;
+    line-height: 1.8;
+    // Reserving space so the buttons don't jump around
+    // when chapters have different lengths:
+    min-height: 220px;
+}
+
+.navigation {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-top: 40px;
+}
+
+#page-number {
+    font-variant-numeric: tabular-nums;
+}
+
+button {
+    padding: 12px 18px;
+    border: none;
+    border-radius: 6px;
+    background: #29251f;
+    color: white;
+    cursor: pointer;
+    font-size: 16px;
+    min-height: 44px; // comfortable finger target on phones
+}
+
+button:hover:not(:disabled) {
+    background: #514a40;
+}
+
+button:disabled {
+    opacity: 0.35;
+    cursor: default;
+}
+
+// Links that look like buttons (used for page navigation).
+a.button,
+span.button {
+    display: inline-block;
+    padding: 12px 18px;
+    border: none;
+    border-radius: 6px;
+    background: #29251f;
+    color: white;
+    cursor: pointer;
+    font-size: 16px;
+    min-height: 44px;
+    text-decoration: none;
+}
+
+a.button:hover {
+    background: #514a40;
+}
+
+span.button.disabled {
+    opacity: 0.35;
+    cursor: default;
+}
+
+// The library page.
+.book-list {
+    list-style: none;
+    padding: 0;
+    font-size: 22px;
+}
+
+.book-list li {
+    padding: 14px 0;
+    border-bottom: 1px solid #ddd4c3;
+}
+
+.book-list a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.book-list a:hover {
+    text-decoration: underline;
+}
+
+// Narrow phone screens: slightly smaller text, tighter layout.
+@media (max-width: 600px) {
+    main {
+        padding: 20px 14px;
+    }
+
+    #book-content {
+        font-size: 18px;
+    }
+}

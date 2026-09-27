@@ -1,0 +1,88 @@
+[package]
+name = "bookreader"
+version = "0.1.0"
+edition = "2021"
+
+# This project builds TWO programs from one codebase:
+#   1. a native binary (the web server)  -> compiled with the "ssr" feature
+#   2. a WebAssembly module (runs in the browser) -> compiled with the "hydrate" feature
+# The [lib] crate-type below makes that possible.
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+leptos = { version = "0.8" }
+leptos_router = { version = "0.8" }
+leptos_meta = { version = "0.8" }
+# serde = "serialization". Lets our Rust structs travel over HTTP
+# (server -> browser) as data. You'll derive it on almost every struct.
+serde = { version = "1", features = ["derive"] }
+
+# Only needed by the server (native) build:
+axum = { version = "0.8", optional = true }
+leptos_axum = { version = "0.8", optional = true }
+tokio = { version = "1", features = ["rt-multi-thread", "macros"], optional = true }
+# sqlx = our way to talk to the SQLite database from Rust.
+sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "sqlite"], optional = true }
+# bcrypt = industry-standard password hashing (one-way; even we
+# can't see a user's real password — see Stage 6).
+bcrypt = { version = "0.19", optional = true }
+# http = types for reading/writing HTTP headers (cookies).
+http = { version = "1", optional = true }
+# pulldown-cmark = renders Markdown -> HTML on the server (blog posts).
+pulldown-cmark = { version = "0.13", optional = true }
+# tracing = structured logging/telemetry (the Rust standard).
+tracing = { version = "0.1", optional = true }
+tracing-subscriber = { version = "0.3", features = ["env-filter"], optional = true }
+tower-http = { version = "0.6", features = ["trace"], optional = true }
+
+# Only needed by the browser (WASM) build:
+console_error_panic_hook = { version = "0.1", optional = true }
+wasm-bindgen = { version = "0.2", optional = true }
+
+[features]
+hydrate = [
+    "leptos/hydrate",
+    "dep:console_error_panic_hook",
+    "dep:wasm-bindgen",
+]
+ssr = [
+    "dep:axum",
+    "dep:tokio",
+    "dep:leptos_axum",
+    "dep:sqlx",
+    "dep:bcrypt",
+    "dep:http",
+    "dep:pulldown-cmark",
+    "dep:tracing",
+    "dep:tracing-subscriber",
+    "dep:tower-http",
+    "leptos/ssr",
+    "leptos_meta/ssr",
+    "leptos_router/ssr",
+]
+
+# Makes the release WASM bundle smaller. You can ignore this.
+[profile.wasm-release]
+inherits = "release"
+opt-level = 'z'
+lto = true
+codegen-units = 1
+panic = "abort"
+
+# Settings read by the cargo-leptos build tool.
+[package.metadata.leptos]
+output-name = "bookreader"
+site-root = "target/site"
+site-pkg-dir = "pkg"
+style-file = "style/main.scss"
+assets-dir = "public"
+site-addr = "127.0.0.1:3000"
+reload-port = 3001
+browserquery = "defaults"
+env = "DEV"
+bin-features = ["ssr"]
+bin-default-features = false
+lib-features = ["hydrate"]
+lib-default-features = false
+lib-profile-release = "wasm-release"
