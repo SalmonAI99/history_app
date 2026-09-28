@@ -280,6 +280,15 @@ F12 console (hydration's complaints).
 5. **Admin list empty** — suspected Option-in-URL (plausible, partially
    right). The fuller truth came from watching actual network traffic.
    Lesson: even good theories need a fact-check.
+6. **"expected an HTML `<form>` element, but found `<!-- -->`"** — a page
+   gated its content on `user.get()` OUTSIDE any `<Transition>`. The server
+   rendered one branch, the WASM client held the other during hydration.
+   The comment marker IS the "nothing rendered" node for a false branch.
+   Fix: any `match user.get()` (or any Resource) that decides which HTML
+   exists needs a `<Transition>` boundary around it — that boundary is the
+   point where server and client agree on the resource's state.
+   Lesson: `<Transition>` is not just a loading spinner — it is the
+   server/client state-synchronization point.
 
 ## When you ask for help
 

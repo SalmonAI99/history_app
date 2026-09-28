@@ -7,6 +7,7 @@
 pub mod app;
 pub mod auth;
 pub mod book;
+pub mod files;
 pub mod posts;
 pub mod site;
 pub mod workspace;

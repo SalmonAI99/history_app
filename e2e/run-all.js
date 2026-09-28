@@ -20,7 +20,7 @@ const { chromium } = require('playwright');
 const ROOT = path.join(__dirname, '..');
 const PORT = 3100;
 const BIN = path.join(ROOT, 'target', 'debug', 'bookreader');
-const SUITES = ['./reader.test.js', './auth.test.js', './posts.test.js', './workspace.test.js'];
+const SUITES = ['./reader.test.js', './auth.test.js', './posts.test.js', './workspace.test.js', './files.test.js'];
 
 async function waitForServer(url, tries = 60) {
   for (let i = 0; i < tries; i++) {
@@ -40,6 +40,8 @@ async function waitForServer(url, tries = 60) {
   }
 
   const dbFile = path.join(os.tmpdir(), `bookreader_e2e_${process.pid}.db`);
+  // Stage 10: uploads also get a throwaway folder, cleaned up after.
+  const uploadDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bookreader_e2e_storage_'));
   const server = spawn(BIN, [], {
     cwd: ROOT,
     stdio: 'ignore',
@@ -47,6 +49,7 @@ async function waitForServer(url, tries = 60) {
       ...process.env,
       DATABASE_URL: `sqlite:${dbFile}?mode=rwc`,
       LEPTOS_SITE_ADDR: `127.0.0.1:${PORT}`,
+      UPLOAD_DIR: uploadDir,
     },
   });
 
@@ -70,6 +73,7 @@ async function waitForServer(url, tries = 60) {
   } finally {
     server.kill();
     try { fs.unlinkSync(dbFile); } catch { /* ignore */ }
+    try { fs.rmSync(uploadDir, { recursive: true, force: true }); } catch { /* ignore */ }
   }
 
   console.log(failures ? `\n${failures} suite(s) failed` : '\nall suites passed');

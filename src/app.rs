@@ -14,6 +14,7 @@ use leptos_router::{
 };
 use crate::auth::{get_user, Login, Logout, Signup, User};
 use crate::book::{get_books, get_chapter};
+use crate::files;
 use crate::site;
 use crate::workspace::{self, SaveNote, SaveProgress};
 
@@ -58,6 +59,8 @@ pub fn App() -> impl IntoView {
                     <A href="/blog">"Blog"</A>
                     <A href="/news">"News"</A>
                     <A href="/teacher">"Teacher"</A>
+                    <A href="/materials">"Materials"</A>
+                    <A href="/member">"Videos"</A>
                 </nav>
                 <Nav/>
             </header>
@@ -75,6 +78,8 @@ pub fn App() -> impl IntoView {
                     <Route path=StaticSegment("login") view=LoginPage/>
                     <Route path=StaticSegment("admin") view=site::AdminPage/>
                     <Route path=StaticSegment("workspace") view=workspace::WorkspacePage/>
+                    <Route path=StaticSegment("materials") view=files::MaterialsPage/>
+                    <Route path=StaticSegment("member") view=files::VideosPage/>
 
                     // the reading app
                     <Route path=StaticSegment("library") view=LibraryPage/>

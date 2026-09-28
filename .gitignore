@@ -4,3 +4,4 @@ bookreader.db
 e2e/node_modules/
 backend/
 
+storage/

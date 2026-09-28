@@ -93,7 +93,7 @@ in 5th grade of primary school (~10–11 years old)**. This shapes the product:
 | 7 | ~~Bilingual~~ — **cut for simplicity** (2026-09); posts table keeps `lang` column for a possible comeback | ➖ skipped |
 | 8 | Public site — home, teacher, blog, news + admin publishing | ✅ done |
 | 9 | Workspace — progress + writings/notes (user-scoped) | ✅ done |
-| 10 | File storage — uploads, private serving + access-controlled video | ⬜ |
+| 10 | File storage — uploads, private serving + access-controlled video | ✅ done (files e2e suite written but unrun, per user request) |
 | 11 | Payments (WeChat Pay/Alipay QR) + members-only materials | ⬜ |
 | 12 | PWA — manifest + service worker + phone install | ⬜ |
 | 13 | Deployment — HK or mainland+ICP, domain, HTTPS | ⬜ |

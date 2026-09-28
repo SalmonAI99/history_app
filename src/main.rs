@@ -7,6 +7,8 @@
 #[cfg(feature = "ssr")]
 #[tokio::main]
 async fn main() {
+    use axum::extract::DefaultBodyLimit;
+    use axum::routing::{get, post};
     use axum::Router;
     use leptos::prelude::*;
     use leptos_axum::{generate_route_list, LeptosRoutes};
@@ -32,6 +34,12 @@ async fn main() {
         .expect("could not initialize the database");
     info!("database ready");
 
+    // Stage 10: the folder uploads live in (NOT web-accessible —
+    // the /files route is the only door). Tests point UPLOAD_DIR
+    // at a throwaway directory.
+    let upload_dir = std::env::var("UPLOAD_DIR").unwrap_or_else(|_| "storage".into());
+    std::fs::create_dir_all(&upload_dir).expect("could not create the storage folder");
+
     // Read the [package.metadata.leptos] settings from Cargo.toml.
     let conf = get_configuration(None).unwrap();
     let addr = conf.leptos_options.site_addr;
@@ -42,6 +50,12 @@ async fn main() {
 
     // Build the Axum web server:
     let app = Router::new()
+        // Stage 10: the gated byte routes. Session is checked
+        // inside these handlers BEFORE any disk is touched.
+        .route("/files", get(bookreader::files::ssr::serve_file))
+        .route("/upload", post(bookreader::files::ssr::upload))
+        // Uploads may be large (videos) — raise the default 2MB cap.
+        .layer(DefaultBodyLimit::max(512 * 1024 * 1024))
         // ...hand it the Leptos routes (pages + server functions)...
         .leptos_routes(&leptos_options, routes, {
             let leptos_options = leptos_options.clone();

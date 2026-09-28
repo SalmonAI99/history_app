@@ -19,9 +19,11 @@ leptos_meta = { version = "0.8" }
 serde = { version = "1", features = ["derive"] }
 
 # Only needed by the server (native) build:
-axum = { version = "0.8", optional = true }
+axum = { version = "0.8", features = ["multipart"], optional = true }
 leptos_axum = { version = "0.8", optional = true }
-tokio = { version = "1", features = ["rt-multi-thread", "macros"], optional = true }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "fs", "io-util"], optional = true }
+# tokio-util: turns a file into a byte STREAM (for video range responses).
+tokio-util = { version = "0.7", features = ["io"], optional = true }
 # sqlx = our way to talk to the SQLite database from Rust.
 sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "sqlite"], optional = true }
 # bcrypt = industry-standard password hashing (one-way; even we
@@ -57,6 +59,7 @@ ssr = [
     "dep:tracing",
     "dep:tracing-subscriber",
     "dep:tower-http",
+    "dep:tokio-util",
     "leptos/ssr",
     "leptos_meta/ssr",
     "leptos_router/ssr",

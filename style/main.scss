@@ -338,6 +338,28 @@ header {
     font-size: 13px;
 }
 
+// ---------- Stage 10: files ----------
+
+.upload-form {
+    background: #fffdf7;
+    border: 1px solid #ddd4c3;
+    border-radius: 10px;
+    padding: 14px;
+    margin: 16px 0;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.doc-item video {
+    width: 100%;
+    max-width: 640px;
+    margin-top: 10px;
+    border-radius: 8px;
+    background: #000;
+}
+
 main {
     max-width: 750px;
     margin: 0 auto;
