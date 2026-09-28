@@ -9,12 +9,14 @@ use leptos::prelude::*;
 use serde::{Deserialize, Serialize};
 
 /// One book in the library list.
+/// `progress` = the chapter the logged-in user reached (None = not started).
 /// FromRow = "SQLx can build this struct from a database row" (server-only).
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[cfg_attr(feature = "ssr", derive(sqlx::FromRow))]
 pub struct BookInfo {
     pub id: i64, // SQLite INTEGER = i64 in Rust
     pub title: String,
+    pub progress: Option<i64>,
 }
 
 /// What the browser receives when it asks for a chapter.
@@ -25,14 +27,28 @@ pub struct ChapterPage {
     pub total_chapters: i64,
 }
 
-/// List all books in the library.
+/// List all books in the library, with the CURRENT USER's progress
+/// attached (a LEFT JOIN: progress is NULL for books not started,
+/// and for guests who aren't logged in at all).
 #[server]
 pub async fn get_books() -> Result<Vec<BookInfo>, ServerFnError> {
     let mut conn = crate::db::db().await?;
 
-    let books = sqlx::query_as::<_, BookInfo>("SELECT id, title FROM books ORDER BY id")
-        .fetch_all(&mut conn)
-        .await?;
+    // -1 = "no such user" -> every progress value comes back NULL
+    let uid = crate::auth::ssr::current_user()
+        .await?
+        .map(|u| u.id)
+        .unwrap_or(-1);
+
+    let books = sqlx::query_as::<_, BookInfo>(
+        "SELECT b.id, b.title, p.chapter AS progress
+         FROM books b
+         LEFT JOIN progress p ON p.book_id = b.id AND p.user_id = ?
+         ORDER BY b.id",
+    )
+    .bind(uid)
+    .fetch_all(&mut conn)
+    .await?;
 
     Ok(books)
 }

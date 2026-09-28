@@ -9,6 +9,7 @@ pub mod auth;
 pub mod book;
 pub mod posts;
 pub mod site;
+pub mod workspace;
 
 // The database layer only exists in the server build —
 // the browser must never touch the database directly.

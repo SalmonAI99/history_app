@@ -15,6 +15,7 @@ use leptos_router::{
 use crate::auth::{get_user, Login, Logout, Signup, User};
 use crate::book::{get_books, get_chapter};
 use crate::site;
+use crate::workspace::{self, SaveNote, SaveProgress};
 
 /// `shell` is the HTML "frame" around your app.
 pub fn shell(options: LeptosOptions) -> impl IntoView {
@@ -73,6 +74,7 @@ pub fn App() -> impl IntoView {
                     // accounts
                     <Route path=StaticSegment("login") view=LoginPage/>
                     <Route path=StaticSegment("admin") view=site::AdminPage/>
+                    <Route path=StaticSegment("workspace") view=workspace::WorkspacePage/>
 
                     // the reading app
                     <Route path=StaticSegment("library") view=LibraryPage/>
@@ -119,6 +121,7 @@ fn Nav() -> impl IntoView {
                         } else {
                             ().into_any()
                         }}
+                        <A href="/workspace">"Workspace"</A>
                         <span class="username">{u.username}</span>
                         // ActionForm = an HTML <form> that calls a server
                         // function when submitted. Our first form!
@@ -230,9 +233,22 @@ fn LibraryPage() -> impl IntoView {
                     <ul class="book-list">
                         {books.into_iter().map(|book| view! {
                             <li>
-                                <A href=format!("/book/{}/chapter/1", book.id)>
-                                    {book.title.clone()}
-                                </A>
+                                <div class="book-row">
+                                    <strong>{book.title.clone()}</strong>
+                                    // The button resumes where THIS user stopped:
+                                    {match book.progress {
+                                        Some(n) => view! {
+                                            <A attr:class="button" href=format!("/book/{}/chapter/{}", book.id, n)>
+                                                {format!("Continue · Chapter {n}")}
+                                            </A>
+                                        }.into_any(),
+                                        None => view! {
+                                            <A attr:class="button" href=format!("/book/{}/chapter/1", book.id)>
+                                                "Start reading →"
+                                            </A>
+                                        }.into_any(),
+                                    }}
+                                </div>
                             </li>
                         }).collect_view()}
                     </ul>
@@ -261,6 +277,33 @@ fn ReaderPage() -> impl IntoView {
         move || ids(),
         move |(book_id, ch)| get_chapter(book_id, ch),
     );
+
+    // ----- Stage 9: progress + notes (logged-in users only) -----
+    let user = expect_context::<Resource<Option<User>>>();
+    let save_progress = ServerAction::<SaveProgress>::new();
+    let save_note = ServerAction::<SaveNote>::new();
+    // A handle to the note <textarea> so we can clear it after saving:
+    let note_ref = NodeRef::<leptos::html::Textarea>::new();
+
+    // When a chapter finishes loading AND a user is logged in,
+    // quietly save their position ("resume anywhere" data).
+    Effect::new(move |_| {
+        let logged_in = matches!(user.get(), Some(Some(_)));
+        let loaded = matches!(chapter.get(), Some(Ok(_)));
+        if logged_in && loaded {
+            let (book_id, ch) = ids();
+            save_progress.dispatch(SaveProgress { book_id, chapter: ch });
+        }
+    });
+
+    // After a note is saved, clear the box so it's ready for the next one.
+    Effect::new(move |_| {
+        if matches!(save_note.value().get(), Some(Ok(()))) {
+            if let Some(t) = note_ref.get() {
+                t.set_value("");
+            }
+        }
+    });
 
     view! {
         <div class="reader">
@@ -312,6 +355,36 @@ fn ReaderPage() -> impl IntoView {
 
                                 <A attr:class="button" href=format!("/book/{book_id}/chapter/1")>"Reset"</A>
                             </nav>
+
+                            // ----- Stage 9: notes (only when logged in) -----
+                            {move || match user.get() {
+                                Some(Some(_)) => view! {
+                                    <section class="note-box">
+                                        <h3>"Your notes for this chapter"</h3>
+                                        <ActionForm action=save_note attr:class="note-form">
+                                            <input type="hidden" name="book_id" value=book_id/>
+                                            <input type="hidden" name="chapter" value=ch/>
+                                            <textarea name="content" rows=3 node_ref=note_ref
+                                                placeholder="Write your thoughts about this chapter..."
+                                                required></textarea>
+                                            <button type="submit">"Save note"</button>
+                                        </ActionForm>
+                                        {move || match save_note.value().get() {
+                                            Some(Ok(())) => view! { <p class="ok">"Saved!"</p> }.into_any(),
+                                            Some(Err(ServerFnError::ServerError(msg))) => {
+                                                view! { <p class="error">{msg}</p> }.into_any()
+                                            }
+                                            _ => ().into_any(),
+                                        }}
+                                    </section>
+                                }.into_any(),
+                                _ => view! {
+                                    <p class="note-hint">
+                                        <A href="/login">"Log in"</A>
+                                        " to save notes and track your progress."
+                                    </p>
+                                }.into_any(),
+                            }}
                         }.into_any()
                     }
                 }}

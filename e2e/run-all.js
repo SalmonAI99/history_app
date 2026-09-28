@@ -20,7 +20,7 @@ const { chromium } = require('playwright');
 const ROOT = path.join(__dirname, '..');
 const PORT = 3100;
 const BIN = path.join(ROOT, 'target', 'debug', 'bookreader');
-const SUITES = ['./reader.test.js', './auth.test.js', './posts.test.js'];
+const SUITES = ['./reader.test.js', './auth.test.js', './posts.test.js', './workspace.test.js'];
 
 async function waitForServer(url, tries = 60) {
   for (let i = 0; i < tries; i++) {
