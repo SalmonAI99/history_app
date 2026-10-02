@@ -16,7 +16,7 @@ module.exports = async function run(context) {
   page.on('pageerror', (err) => errors.push(err.message));
 
   // 1. Guests see "Log in"
-  await page.goto('/', { waitUntil: 'networkidle' });
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
   await settle(page);
   assert((await nav(page)).includes('Log in'), 'guest nav should show "Log in"');
 
@@ -31,7 +31,7 @@ module.exports = async function run(context) {
   assert((await nav(page)).includes('test_parent'), 'nav should show username after signup');
 
   // 3. Reloading keeps us logged in (session cookie)
-  await page.reload({ waitUntil: 'networkidle' });
+  await page.reload({ waitUntil: 'domcontentloaded' });
   await settle(page);
   assert((await nav(page)).includes('test_parent'), 'should stay logged in after reload');
 

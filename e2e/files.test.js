@@ -11,7 +11,7 @@ function assert(cond, msg) {
 const settle = (page, ms = 2500) => page.waitForTimeout(ms);
 
 async function login(page, name) {
-  await page.goto('/login', { waitUntil: 'networkidle' });
+  await page.goto('/login', { waitUntil: 'domcontentloaded' });
   await settle(page, 1200);
   await page.fill('input[name="username"]', name);
   await page.fill('input[name="password"]', 'secret123');
@@ -19,8 +19,35 @@ async function login(page, name) {
   await settle(page, 3000);
 }
 
+// Ends with an admin session no matter which suites ran before us:
+// in the full chain, test_parent (admin) exists; standalone, we sign
+// up files_admin — first user in a fresh db is always the admin.
+async function ensureAdmin(page) {
+  await login(page, 'test_parent');
+  await page.goto('/materials', { waitUntil: 'domcontentloaded' });
+  await settle(page, 3000);
+  if (await page.$('.upload-form')) return 'test_parent';
+
+  // standalone run: fresh db -> the first signup is the admin
+  await page.goto('/login', { waitUntil: 'domcontentloaded' });
+  await settle(page, 2500);
+  await page.click('text=Create an account');
+  await settle(page, 1500);
+  await page.fill('input[name="username"]', 'files_admin');
+  await page.fill('input[name="password"]', 'secret123');
+  await page.click('.auth-form button[type="submit"]');
+  await settle(page, 3000);
+  await page.goto('/materials', { waitUntil: 'domcontentloaded' });
+  await settle(page, 3000);
+  if (await page.$('.upload-form')) return 'files_admin';
+
+  const nav = await page.textContent('.user-nav');
+  const main = (await page.textContent('main')).slice(0, 200);
+  throw new Error('no admin session obtained. nav: "' + nav + '" main: "' + main + '"');
+}
+
 async function logout(page) {
-  await page.goto('/', { waitUntil: 'networkidle' });
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
   await settle(page, 1200);
   await page.click('.user-nav button[type="submit"]');
   await settle(page);
@@ -31,34 +58,38 @@ module.exports = async function run(context) {
   const errors = [];
   page.on('pageerror', (err) => errors.push(err.message));
 
+  console.log("step", "// 1.");
   // 1. Guest hits /files?id=1 directly -> 401, no bytes.
   const guest = await page.request.get(`${BASE}/files?id=1`);
   assert(guest.status() === 401, 'guest should get 401, got ' + guest.status());
 
+  console.log("step", "// 2.");
   // 2. Guests see a login hint on both file pages.
-  await page.goto('/materials', { waitUntil: 'networkidle' });
+  await page.goto('/materials', { waitUntil: 'domcontentloaded' });
   await settle(page);
   assert((await page.textContent('main')).includes('log in'), 'materials should gate guests');
-  await page.goto('/member', { waitUntil: 'networkidle' });
+  await page.goto('/member', { waitUntil: 'domcontentloaded' });
   await settle(page);
   assert((await page.textContent('main')).includes('log in'), 'videos should gate guests');
 
+  console.log("step", "// 3.");
   // 3. Admin logs in, uploads a text worksheet from /materials.
-  await login(page, 'test_parent');
-  await page.goto('/materials', { waitUntil: 'networkidle' });
+  await ensureAdmin(page);
+  await page.goto('/materials', { waitUntil: 'domcontentloaded' });
   await settle(page);
   const noteText = 'Reading homework: chapters 1 and 2.\nWrite two sentences about Emma.';
   await page.setInputFiles('.upload-form input[type="file"]', {
     name: 'homework.txt', mimeType: 'text/plain', buffer: Buffer.from(noteText),
   });
   await Promise.all([
-    page.waitForNavigation({ waitUntil: 'networkidle' }),
+    page.waitForNavigation({ waitUntil: 'domcontentloaded' }),
     page.click('.upload-form button[type="submit"]'),
   ]);
   await settle(page);
   const mats = await page.textContent('main');
   assert(mats.includes('homework.txt'), 'material should appear after upload, got: ' + mats.slice(0, 200));
 
+  console.log("step", "// 4.");
   // 4. The download link serves the exact bytes back.
   const href = await page.getAttribute('.doc-item .doc-heading a', 'href');
   assert(href && href.startsWith('/files?id='), 'download link should be /files?id=..., got ' + href);
@@ -66,6 +97,7 @@ module.exports = async function run(context) {
   assert(dl.status() === 200, 'download should be 200, got ' + dl.status());
   assert((await dl.text()) === noteText, 'downloaded bytes must match what we uploaded');
 
+  console.log("step", "// 5.");
   // 5. Range request -> 206 Partial Content with the right slice.
   const ranged = await page.request.get(BASE + href, { headers: { Range: 'bytes=0-9' } });
   assert(ranged.status() === 206, 'range request should be 206, got ' + ranged.status());
@@ -73,14 +105,15 @@ module.exports = async function run(context) {
   assert(body.length === 10 && body.toString() === noteText.slice(0, 10),
     'range body should be the first 10 bytes, got ' + body.toString());
 
+  console.log("step", "// 6.");
   // 6. Upload a video on /member -> player appears with a gated src.
-  await page.goto('/member', { waitUntil: 'networkidle' });
+  await page.goto('/member', { waitUntil: 'domcontentloaded' });
   await settle(page);
   await page.setInputFiles('.upload-form input[type="file"]', {
     name: 'lesson1.mp4', mimeType: 'video/mp4', buffer: Buffer.from('FAKE-MP4-BYTES-FOR-TESTING'),
   });
   await Promise.all([
-    page.waitForNavigation({ waitUntil: 'networkidle' }),
+    page.waitForNavigation({ waitUntil: 'domcontentloaded' }),
     page.click('.upload-form button[type="submit"]'),
   ]);
   await settle(page);
@@ -89,30 +122,34 @@ module.exports = async function run(context) {
   const videoSrc = await page.getAttribute('video', 'src');
   assert(videoSrc && videoSrc.startsWith('/files?id='), 'player src should be gated, got ' + videoSrc);
 
+  console.log("step", "// 7.");
   // 7. The video is NOT on the materials page, and vice versa.
-  await page.goto('/materials', { waitUntil: 'networkidle' });
+  await page.goto('/materials', { waitUntil: 'domcontentloaded' });
   await settle(page);
   assert(!(await page.textContent('main')).includes('lesson1.mp4'), 'videos must not appear on materials');
 
+  console.log("step", "// 8.");
   // 8. Range request against the video -> 206.
   const vr = await page.request.get(BASE + videoSrc, { headers: { Range: 'bytes=0-4' } });
   assert(vr.status() === 206, 'video range should be 206, got ' + vr.status());
 
+  console.log("step", "// 9.");
   // 9. Unknown id -> 404.
   const missing = await page.request.get(`${BASE}/files?id=99999`);
   assert(missing.status() === 404, 'unknown id should be 404, got ' + missing.status());
 
+  console.log("step", "// 10.");
   // 10. A non-admin student: can download materials, sees NO forms.
   await logout(page);
-  await page.goto('/login', { waitUntil: 'networkidle' });
+  await page.goto('/login', { waitUntil: 'domcontentloaded' });
   await settle(page, 1200);
-  await page.click('text=Sign up');
+  await page.click('text=Create an account');
   await settle(page, 800);
   await page.fill('input[name="username"]', 'file_student');
   await page.fill('input[name="password"]', 'secret123');
   await page.click('.auth-form button[type="submit"]');
   await settle(page, 3000);
-  await page.goto('/materials', { waitUntil: 'networkidle' });
+  await page.goto('/materials', { waitUntil: 'domcontentloaded' });
   await settle(page);
   const stuMats = await page.textContent('main');
   assert(stuMats.includes('homework.txt'), 'student should see the material');
@@ -121,10 +158,11 @@ module.exports = async function run(context) {
   const stuDl = await page.request.get(BASE + href);
   assert(stuDl.status() === 200, 'student can download materials');
 
+  console.log("step", "// 11.");
   // 11. Back as admin: delete both files -> rows AND bytes gone.
   await logout(page);
-  await login(page, 'test_parent');
-  await page.goto('/materials', { waitUntil: 'networkidle' });
+  await ensureAdmin(page);
+  await page.goto('/materials', { waitUntil: 'domcontentloaded' });
   await settle(page);
   await page.click('.doc-item button[type="submit"]'); // delete homework.txt
   await settle(page);
@@ -132,7 +170,7 @@ module.exports = async function run(context) {
   const goneDl = await page.request.get(BASE + href);
   assert(goneDl.status() === 404, 'deleted file should 404, got ' + goneDl.status());
 
-  await page.goto('/member', { waitUntil: 'networkidle' });
+  await page.goto('/member', { waitUntil: 'domcontentloaded' });
   await settle(page);
   await page.click('.doc-item button[type="submit"]'); // delete lesson1.mp4
   await settle(page);

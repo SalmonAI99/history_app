@@ -14,7 +14,7 @@ module.exports = async function run(context) {
   page.on('pageerror', (err) => errors.push(err.message));
 
   // 1. Library lists the seeded book (library lives at /library since Stage 8)
-  await page.goto('/library', { waitUntil: 'networkidle' });
+  await page.goto('/library', { waitUntil: 'domcontentloaded' });
   await settle(page);
   const bookLink = await page.textContent('.book-list a').catch(() => null);
   assert(bookLink && bookLink.length > 0, 'library should list a book');
@@ -38,12 +38,12 @@ module.exports = async function run(context) {
   assert((await page.textContent('#chapter-title')) === 'Chapter 1', 'back button should return to Chapter 1');
 
   // 5. A deep link loads its chapter directly (SSR)
-  await page.goto('/book/1/chapter/2', { waitUntil: 'networkidle' });
+  await page.goto('/book/1/chapter/2', { waitUntil: 'domcontentloaded' });
   await settle(page);
   assert((await page.textContent('#chapter-title')) === 'Chapter 2', 'deep link should show Chapter 2');
 
   // 6. A chapter that doesn't exist shows the error message
-  await page.goto('/book/1/chapter/99', { waitUntil: 'networkidle' });
+  await page.goto('/book/1/chapter/99', { waitUntil: 'domcontentloaded' });
   await settle(page);
   const body = await page.textContent('.reader');
   assert(body.includes('could not be found'), 'bad chapter should show the error text');

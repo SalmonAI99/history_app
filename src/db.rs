@@ -147,6 +147,61 @@ pub async fn init() -> Result<(), sqlx::Error> {
     .execute(&mut conn)
     .await?;
 
+    sqlx::query(
+        "CREATE TABLE IF NOT EXISTS classes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            notes TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )",
+    )
+    .execute(&mut conn)
+    .await?;
+
+    sqlx::query(
+        "CREATE TABLE IF NOT EXISTS class_comments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            class_id INTEGER NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
+            user_id INTEGER NOT NULL REFERENCES users(id),
+            content TEXT NOT NULL,
+            created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )",
+    )
+    .execute(&mut conn)
+    .await?;
+
+    sqlx::query(
+        "CREATE TABLE IF NOT EXISTS world_users (        -- Book World
+            user_id    INTEGER PRIMARY KEY REFERENCES users(id),
+            username   TEXT NOT NULL,
+            book_id    INTEGER NOT NULL DEFAULT 0,   -- shelf you're at (0 = none)
+            x          INTEGER NOT NULL DEFAULT 3,       -- grid position
+            y          INTEGER NOT NULL DEFAULT 3,
+            message    TEXT NOT NULL DEFAULT '',         -- latest chat line
+            updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )",
+    )
+    .execute(&mut conn)
+    .await?;
+
+    // world_users grew grid coordinates AFTER its first version. SQLite
+    // has no "ADD COLUMN IF NOT EXISTS", so check pragma first and only
+    // alter what's missing (this is what a "migration" means, gently).
+    for col in ["x", "y"] {
+        let (has,): (i64,) = sqlx::query_as(&format!(
+            "SELECT COUNT(*) FROM pragma_table_info('world_users') WHERE name = '{col}'"
+        ))
+        .fetch_one(&mut conn)
+        .await?;
+        if has == 0 {
+            sqlx::query(&format!(
+                "ALTER TABLE world_users ADD COLUMN {col} INTEGER NOT NULL DEFAULT 3"
+            ))
+            .execute(&mut conn)
+            .await?;
+        }
+    }
+
     // First run only: fill the database from books/book.txt.
     let (count,): (i64,) = sqlx::query_as("SELECT COUNT(*) FROM books")
         .fetch_one(&mut conn)

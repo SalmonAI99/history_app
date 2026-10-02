@@ -20,7 +20,10 @@ const { chromium } = require('playwright');
 const ROOT = path.join(__dirname, '..');
 const PORT = 3100;
 const BIN = path.join(ROOT, 'target', 'debug', 'bookreader');
-const SUITES = ['./reader.test.js', './auth.test.js', './posts.test.js', './workspace.test.js', './files.test.js'];
+const ALL = ['./reader.test.js', './auth.test.js', './posts.test.js', './workspace.test.js', './world.test.js', './files.test.js'];
+// `node run-all.js world` -> run only suites whose name contains "world"
+const filter = process.argv[2];
+const SUITES = filter ? ALL.filter((s) => s.includes(filter)) : ALL;
 
 async function waitForServer(url, tries = 60) {
   for (let i = 0; i < tries; i++) {
@@ -39,6 +42,16 @@ async function waitForServer(url, tries = 60) {
     process.exit(1);
   }
 
+  // Leptos 0.8's hydration snippet calls init('/pkg/NAME_bg.wasm'), but
+  // cargo-leptos 0.3.9 writes the file as NAME.wasm -> 404 -> hydration
+  // silently dies. Make the _bg alias exist (identical bytes).
+  const pkg = path.join(__dirname, '..', 'target', 'site', 'pkg');
+  const wasm = path.join(pkg, 'bookreader.wasm');
+  const wasmBg = path.join(pkg, 'bookreader_bg.wasm');
+  if (fs.existsSync(wasm) && !fs.existsSync(wasmBg)) {
+    fs.copyFileSync(wasm, wasmBg);
+  }
+
   const dbFile = path.join(os.tmpdir(), `bookreader_e2e_${process.pid}.db`);
   // Stage 10: uploads also get a throwaway folder, cleaned up after.
   const uploadDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bookreader_e2e_storage_'));
@@ -49,6 +62,10 @@ async function waitForServer(url, tries = 60) {
       ...process.env,
       DATABASE_URL: `sqlite:${dbFile}?mode=rwc`,
       LEPTOS_SITE_ADDR: `127.0.0.1:${PORT}`,
+      // LEPTOS_* env vars put Leptos in "env-only" config mode — it stops
+      // reading Cargo.toml and output-name falls back to "" (serving
+      // /pkg/.js instead of /pkg/bookreader.js). Set it explicitly.
+      LEPTOS_OUTPUT_NAME: 'bookreader',
       UPLOAD_DIR: uploadDir,
     },
   });

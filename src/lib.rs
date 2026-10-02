@@ -7,10 +7,12 @@
 pub mod app;
 pub mod auth;
 pub mod book;
+pub mod classes;
 pub mod files;
 pub mod posts;
 pub mod site;
 pub mod workspace;
+pub mod world;
 
 // The database layer only exists in the server build —
 // the browser must never touch the database directly.

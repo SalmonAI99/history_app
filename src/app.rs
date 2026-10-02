@@ -14,9 +14,11 @@ use leptos_router::{
 };
 use crate::auth::{get_user, Login, Logout, Signup, User};
 use crate::book::{get_books, get_chapter};
+use crate::classes;
 use crate::files;
 use crate::site;
 use crate::workspace::{self, SaveNote, SaveProgress};
+use crate::world;
 
 /// `shell` is the HTML "frame" around your app.
 pub fn shell(options: LeptosOptions) -> impl IntoView {
@@ -59,6 +61,8 @@ pub fn App() -> impl IntoView {
                     <A href="/blog">"Blog"</A>
                     <A href="/news">"News"</A>
                     <A href="/teacher">"Teacher"</A>
+                    <A href="/classes">"Classes"</A>
+                    <A href="/book_world">"World"</A>
                     <A href="/materials">"Materials"</A>
                     <A href="/member">"Videos"</A>
                 </nav>
@@ -69,6 +73,8 @@ pub fn App() -> impl IntoView {
                     // PUBLIC zone (marketing) — see site.rs
                     <Route path=StaticSegment("") view=site::HomePage/>
                     <Route path=StaticSegment("teacher") view=site::TeacherPage/>
+                    <Route path=StaticSegment("classes") view=classes::ClassesPage/>
+                    <Route path=(StaticSegment("classes"), ParamSegment("id")) view=classes::ClassDetailPage/>
                     <Route path=StaticSegment("blog") view=site::BlogPage/>
                     <Route path=(StaticSegment("blog"), ParamSegment("slug")) view=site::PostDetailPage/>
                     <Route path=StaticSegment("news") view=site::NewsPage/>
@@ -80,6 +86,7 @@ pub fn App() -> impl IntoView {
                     <Route path=StaticSegment("workspace") view=workspace::WorkspacePage/>
                     <Route path=StaticSegment("materials") view=files::MaterialsPage/>
                     <Route path=StaticSegment("member") view=files::VideosPage/>
+                    <Route path=StaticSegment("book_world") view=world::WorldPage/>
 
                     // the reading app
                     <Route path=StaticSegment("library") view=LibraryPage/>

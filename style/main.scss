@@ -128,10 +128,42 @@ header {
     text-decoration: underline;
 }
 
+.class-list, .comment-list {
+    list-style: none;
+    padding: 0;
+}
+
+.class-card, .class-detail, .class-comments, .comment-list li {
+    background: #fffdf7;
+    border: 1px solid #ddd4c3;
+    border-radius: 10px;
+    padding: 18px;
+    margin: 16px 0;
+}
+
+.class-card h3 { margin-top: 0; }
+.class-card p, .class-notes, .comment-list p { white-space: pre-wrap; }
+.class-create, .class-comments { max-width: 760px; }
+.class-create label, .class-comments label { display: block; margin: 12px 0; }
+.class-create input, .class-create textarea, .class-comments textarea {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    margin-top: 6px;
+    border: 1px solid #c9bfa9;
+    border-radius: 6px;
+    background: #fff;
+    color: inherit;
+    font: inherit;
+}
+.comment-meta { display: flex; justify-content: space-between; gap: 12px; }
+.comment-list li p { margin-bottom: 0; }
+
 // Home page hero
 .hero {
     text-align: center;
     padding: 40px 16px;
+    animation: rise-in 500ms ease-out both;
 }
 
 .hero h2 {
@@ -158,6 +190,12 @@ header {
     border: 1px solid #ddd4c3;
     border-radius: 10px;
     padding: 18px;
+    transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(41, 37, 31, 0.1);
 }
 
 .card h3 {
@@ -301,6 +339,7 @@ header {
     margin-top: 40px;
     text-align: center;
     color: #847b6b;
+    animation: rise-in 350ms ease-out both;
 }
 
 .doc-list {
@@ -360,6 +399,233 @@ header {
     background: #000;
 }
 
+// ---------- Book World ----------
+
+.world-rooms {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-top: 18px;
+}
+
+.room {
+    flex: 1 1 230px;
+    background: #fffdf7;
+    border: 1px solid #ddd4c3;
+    border-radius: 10px;
+    padding: 14px;
+}
+
+// The room YOU are standing in.
+.room.active {
+    border-color: #a08347;
+    box-shadow: 0 0 0 2px #e8d9b0;
+}
+
+// Clicking a room's title = walking there. Make the button look
+// like a heading, not a button.
+.room-head button {
+    background: none;
+    border: none;
+    font-weight: bold;
+    font-size: 17px;
+    cursor: pointer;
+    padding: 0;
+    color: inherit;
+    font-family: inherit;
+}
+
+.people {
+    margin: 10px 0;
+    min-height: 26px;
+}
+
+.person {
+    margin: 4px 0;
+    font-size: 15px;
+}
+
+.person .me {
+    font-weight: bold;
+    color: #8a6d3b;
+}
+
+// The little chat bubble next to a name.
+.bubble {
+    background: #efe6cf;
+    border-radius: 10px;
+    padding: 2px 8px;
+    margin-left: 6px;
+    font-size: 14px;
+}
+
+.empty-room {
+    color: #847b6b;
+    font-size: 14px;
+}
+
+.jump {
+    display: inline-block;
+    margin-top: 8px;
+}
+
+// "Walking" buttons: the room title button submits the move form.
+.room-head button {
+    background: none;
+    border: none;
+    font-weight: bold;
+    font-size: 17px;
+    cursor: pointer;
+    padding: 0;
+    color: inherit;
+    font-family: inherit;
+}
+
+.chat-zone {
+    margin-top: 26px;
+}
+
+.chat-bar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.chat-bar input[type="text"] {
+    flex: 1;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #c9bfa9;
+    border-radius: 6px;
+    background: white;
+    color: inherit;
+    font-family: inherit;
+    min-height: 44px;
+}
+
+// ---------- Book World: the 2D grid ----------
+
+// The play field: one CSS box, 16x10 tiles drawn by background gradients.
+// tabindex=0 makes it focusable so arrow keys reach it.
+.game {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 10; // 16 wide x 10 tall keeps tiles square
+    background-color: #79a85c; // grass
+    background-image:
+        repeating-linear-gradient(0deg, rgba(0,0,0,.06) 0 1px, transparent 1px 100%),
+        repeating-linear-gradient(90deg, rgba(0,0,0,.06) 0 1px, transparent 1px 100%);
+    background-size: 6.25% 10%; // one tile
+    border: 2px solid #5a7a42;
+    border-radius: 10px;
+    overflow: visible; // name tags must spill outside the field
+}
+
+.game:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px #8a6d3b;
+}
+
+// A player: one tile of the grid, colored + name tag below.
+.avatar {
+    position: absolute;
+    width: 6.25%;            // one tile wide
+    aspect-ratio: 1;
+    border-radius: 4px;
+    border: 2px solid rgba(0,0,0,.25);
+    box-sizing: border-box;
+    transition: left 180ms ease-out, top 180ms ease-out, filter 180ms ease;
+}
+
+.avatar.you {
+    animation: avatar-arrive 220ms ease-out;
+}
+
+.avatar:hover {
+    filter: brightness(1.12);
+}
+
+// Your own avatar gets a light outline.
+.avatar.you {
+    border-color: white;
+    box-shadow: 0 0 0 2px rgba(0,0,0,.3);
+}
+
+// The name under the square.
+.avatar .tag {
+    position: absolute;
+    left: 50%;
+    top: 100%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    font-size: 12px;
+    background: rgba(255, 253, 247, 0.92);
+    padding: 0 4px;
+    border-radius: 4px;
+    margin-top: 2px;
+    z-index: 2;
+}
+
+.avatar .tag .me {
+    font-weight: bold;
+    color: #8a6d3b;
+}
+
+// The chat bubble floats above the square.
+.avatar .bubble {
+    position: absolute;
+    bottom: 105%;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    z-index: 2;
+}
+
+// A bookshelf pad on the top row.
+.pad {
+    position: absolute;
+    width: 6.25%;
+    aspect-ratio: 1;
+    background: #8a5a2b;
+    border: 2px solid #5d3a1a;
+    box-sizing: border-box;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+}
+
+.pad-tag {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 11px;
+    color: #29251f;
+    background: rgba(255, 253, 247, 0.92);
+    padding: 0 4px;
+    border-radius: 4px;
+    margin-top: 2px;
+}
+
+// Appears when you stand on a shelf.
+.jump-overlay {
+    margin-top: 18px;
+    padding: 14px;
+    background: #fffdf7;
+    border: 1px solid #ddd4c3;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
 main {
     max-width: 750px;
     margin: 0 auto;
@@ -400,10 +666,12 @@ button {
     cursor: pointer;
     font-size: 16px;
     min-height: 44px; // comfortable finger target on phones
+    transition: background-color 150ms ease, transform 150ms ease;
 }
 
 button:hover:not(:disabled) {
     background: #514a40;
+    transform: translateY(-1px);
 }
 
 button:disabled {
@@ -424,10 +692,40 @@ span.button {
     font-size: 16px;
     min-height: 44px;
     text-decoration: none;
+    transition: background-color 150ms ease, transform 150ms ease;
 }
 
 a.button:hover {
     background: #514a40;
+    transform: translateY(-1px);
+}
+
+@keyframes rise-in {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes avatar-arrive {
+    from { scale: 0.75; }
+    to { scale: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+    }
 }
 
 span.button.disabled {

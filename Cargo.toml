@@ -41,12 +41,15 @@ tower-http = { version = "0.6", features = ["trace"], optional = true }
 # Only needed by the browser (WASM) build:
 console_error_panic_hook = { version = "0.1", optional = true }
 wasm-bindgen = { version = "0.2", optional = true }
+# web-sys: world keyboard handling (skip keys while typing in chat).
+web-sys = { version = "0.3", features = ["HtmlElement"], optional = true }
 
 [features]
 hydrate = [
     "leptos/hydrate",
     "dep:console_error_panic_hook",
     "dep:wasm-bindgen",
+    "dep:web-sys",
 ]
 ssr = [
     "dep:axum",
