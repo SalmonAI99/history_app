@@ -20,9 +20,9 @@ serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", optional = true }
 
 # Only needed by the server (native) build:
-axum = { version = "0.8", features = ["multipart"], optional = true }
+axum = { version = "0.8", features = ["multipart", "ws"], optional = true }
 leptos_axum = { version = "0.8", optional = true }
-tokio = { version = "1", features = ["rt-multi-thread", "macros", "fs", "io-util"], optional = true }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "fs", "io-util", "sync"], optional = true }
 # tokio-util: turns a file into a byte STREAM (for video range responses).
 tokio-util = { version = "0.7", features = ["io"], optional = true }
 # sqlx = our way to talk to the SQLite database from Rust.
@@ -43,10 +43,14 @@ tower-http = { version = "0.6", features = ["trace", "fs"], optional = true }
 console_error_panic_hook = { version = "0.1", optional = true }
 wasm-bindgen = { version = "0.2", optional = true }
 # web-sys: world keyboard handling (skip keys while typing in chat).
-web-sys = { version = "0.3", features = ["HtmlElement"], optional = true }
+web-sys = { version = "0.3", features = ["HtmlElement", "HtmlCanvasElement", "CanvasRenderingContext2d", "CanvasGradient", "WebSocket", "MessageEvent", "ErrorEvent", "CloseEvent", "KeyboardEvent", "Window", "Document", "AudioContext", "OscillatorNode", "GainNode", "AudioDestinationNode", "Location"], optional = true }
+uuid = { version = "1.27.0", features = ["v4", "js"] }
+futures = "0.3.34"
+js-sys = "0.3.106"
 
 [features]
 hydrate = [
+    "dep:serde_json",
     "leptos/hydrate",
     "dep:console_error_panic_hook",
     "dep:wasm-bindgen",

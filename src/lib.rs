@@ -14,6 +14,7 @@ pub mod site;
 pub mod slides;
 pub mod workspace;
 pub mod world;
+pub mod simulator;
 
 // The database layer only exists in the server build —
 // the browser must never touch the database directly.
