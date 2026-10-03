@@ -141,7 +141,7 @@ pub fn ClassDetailPage() -> impl IntoView {
                         <section class="class-comments">
                             <h3>"Class comments"</h3>
                             <ActionForm action=add_comment>
-                                <input type="hidden" name="class_id" value=class_id()/>
+                                <input type="hidden" name="class_id" value=move || class_id()/>
                                 <label>"Leave a comment" <textarea name="content" rows="3" maxlength="2000" required placeholder="Share a question or thought with the class"></textarea></label>
                                 <button type="submit">"Post comment"</button>
                             </ActionForm>

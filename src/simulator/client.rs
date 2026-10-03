@@ -35,9 +35,7 @@ pub fn play_sound(sound_type: &str) {
                 }
             }
             if let Some(ctx) = actx_ref.borrow().as_ref() {
-                if ctx.state() == web_sys::AudioContextState::Suspended {
-                    let _ = ctx.resume();
-                }
+                let _ = ctx.resume();
                 let now = ctx.current_time();
                 if let (Ok(osc), Ok(gain)) = (ctx.create_oscillator(), ctx.create_gain()) {
                     let _ = osc.connect_with_audio_node(&gain);
@@ -127,27 +125,51 @@ pub fn init_game(
     current_scene_sig: RwSignal<String>,
     canvas: HtmlCanvasElement,
 ) {
-    let window = web_sys::window().expect("no global `window` exists");
-    
-    let ctx = canvas
-        .get_context("2d")
-        .unwrap()
-        .unwrap()
-        .dyn_into::<CanvasRenderingContext2d>()
-        .unwrap();
+    #[cfg(feature = "hydrate")]
+    console_error_panic_hook::set_once();
 
+    let window = match web_sys::window() {
+        Some(w) => w,
+        None => return,
+    };
+    
+    let ctx = match canvas.get_context("2d") {
+        Ok(Some(c)) => match c.dyn_into::<CanvasRenderingContext2d>() {
+            Ok(ctx) => ctx,
+            Err(_) => return,
+        },
+        _ => return,
+    };
+
+    let my_id = Rc::new(RefCell::new("local-init".to_string()));
+
+    // Immediately insert local initial player so canvas is NEVER blank while connecting
+    if players_sig.get_untracked().is_empty() {
+        players_sig.update(|p| {
+            p.push(PlayerState {
+                id: "local-init".to_string(),
+                x: 100.0,
+                y: 330.0,
+                color: "#2563eb".to_string(),
+                class: PlayerClass::Explorer,
+                level: 1,
+                knowledge: 0,
+                scene: "overview".to_string(),
+            });
+        });
+    }
+
+    // Connect WebSocket safely without crashing if network fails
     let protocol = if window.location().protocol().unwrap_or_default() == "https:" { "wss:" } else { "ws:" };
-    let ws_url = format!("{}//{}/ws/simulator", protocol, window.location().host().unwrap());
-    let ws = WebSocket::new(&ws_url).unwrap();
+    let host = window.location().host().unwrap_or_else(|_| "localhost:3000".to_string());
+    let ws_url = format!("{}//{}/ws/simulator", protocol, host);
+    web_sys::console::log_1(&JsValue::from_str(&format!("Connecting simulator WS: {}", ws_url)));
 
-    WS_INSTANCE.with(|ws_ref| {
-        *ws_ref.borrow_mut() = Some(ws.clone());
-    });
+    if let Ok(ws) = WebSocket::new(&ws_url) {
+        WS_INSTANCE.with(|ws_ref| {
+            *ws_ref.borrow_mut() = Some(ws.clone());
+        });
 
-    let my_id = Rc::new(RefCell::new(String::new()));
-    
-    // Handle WebSocket messages
-    {
         let my_id_clone = my_id.clone();
         let onmessage_callback = Closure::<dyn FnMut(_)>::new(move |e: MessageEvent| {
             if let Ok(txt) = e.data().dyn_into::<js_sys::JsString>() {
@@ -155,7 +177,12 @@ pub fn init_game(
                     players_sig.update(|players| {
                         match &msg {
                             ServerMessage::Welcome { id } => {
+                                // Update local ID and replace local-init placeholder
+                                let old_id = my_id_clone.borrow().clone();
                                 *my_id_clone.borrow_mut() = id.clone();
+                                if let Some(local_p) = players.iter_mut().find(|p| p.id == old_id) {
+                                    local_p.id = id.clone();
+                                }
                             }
                             ServerMessage::StateSync { players: new_players } => {
                                 *players = new_players.clone();
@@ -681,7 +708,7 @@ pub fn init_game(
             if let Ok(grad) = ctx.create_radial_gradient(my_p.x, my_p.y, 40.0, my_p.x, my_p.y, vision_radius) {
                 let _ = grad.add_color_stop(0.0, "rgba(0, 0, 0, 0.0)");
                 let _ = grad.add_color_stop(1.0, "rgba(12, 10, 9, 0.38)");
-                ctx.set_fill_style(&grad);
+                ctx.set_fill_style_canvas_gradient(&grad);
                 ctx.fill_rect(0.0, 0.0, w, h);
             }
         }
