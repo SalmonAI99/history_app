@@ -6,3 +6,5 @@ backend/
 
 storage/
 .venv/
+public/models
+.agent

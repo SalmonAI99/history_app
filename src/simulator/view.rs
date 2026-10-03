@@ -80,11 +80,15 @@ pub fn SimulatorPage() -> impl IntoView {
                 }
                 loadScript('/three.min.js', function() {
                     loadScript('/OrbitControls.js', function() {
-                        loadScript('/simulator/sandbox.js', function() {
-                            var container = document.getElementById('sandbox-3d-viewport');
-                            if (container && window.initSandbox3D) {
-                                window.initSandbox3D(container);
-                            }
+                        loadScript('/GLTFLoader.js', function() {
+                            loadScript('/SkeletonUtils.js', function() {
+                                loadScript('/simulator/sandbox.js', function() {
+                                    var container = document.getElementById('sandbox-3d-viewport');
+                                    if (container && window.initSandbox3D) {
+                                        window.initSandbox3D(container);
+                                    }
+                                });
+                            });
                         });
                     });
                 });
@@ -152,6 +156,44 @@ pub fn SimulatorPage() -> impl IntoView {
         #[cfg(feature = "hydrate")]
         {
             let _ = js_sys::eval("if (window.toggleSandboxPlayback) window.toggleSandboxPlayback();");
+        }
+    };
+
+    let start_control_roam = move |_| {
+        #[cfg(feature = "hydrate")]
+        {
+            let _ = js_sys::eval("if (window.controlRandomCitizen) window.controlRandomCitizen();");
+        }
+    };
+
+    let start_control_knight = move |_| {
+        #[cfg(feature = "hydrate")]
+        {
+            let _ = js_sys::eval("if (window.takeControlOfKnight) window.takeControlOfKnight();");
+        }
+    };
+
+    let focus_landmark = move |name: &'static str| {
+        #[cfg(feature = "hydrate")]
+        {
+            let code = format!("if (window.focusLandmark) window.focusLandmark('{}');", name);
+            let _ = js_sys::eval(&code);
+        }
+    };
+
+    let set_time_of_day = move |tod: &'static str| {
+        #[cfg(feature = "hydrate")]
+        {
+            let code = format!("if (window.setTimeOfDay) window.setTimeOfDay('{}');", tod);
+            let _ = js_sys::eval(&code);
+        }
+    };
+
+    let trigger_event = move |evt: &'static str| {
+        #[cfg(feature = "hydrate")]
+        {
+            let code = format!("if (window.triggerHistoricalEvent) window.triggerHistoricalEvent('{}');", evt);
+            let _ = js_sys::eval(&code);
         }
     };
 
@@ -267,45 +309,66 @@ pub fn SimulatorPage() -> impl IntoView {
                                 <button on:click=move |_| set_3d_speed(5.0) style="padding: 3px 8px; font-size: 11px; background: transparent; color: #e2e8f0; border: none; cursor: pointer;">"5x"</button>
                             </div>
 
+                            <button
+                                on:click=start_control_roam
+                                style="padding: 5px 12px; background: linear-gradient(135deg, #10b981, #059669); color: #fff; font-weight: bold; font-size: 12px; border: none; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 5px; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);"
+                            >
+                                "🎮 附身平民"
+                            </button>
+                            <button
+                                on:click=start_control_knight
+                                style="padding: 5px 12px; background: linear-gradient(135deg, #0284c7, #1d4ed8); color: #fff; font-weight: bold; font-size: 12px; border: none; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 5px; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4);"
+                            >
+                                "⚔️ 附身圣殿骑士 (WASD)"
+                            </button>
+
                             <div style="display: flex; gap: 8px; margin-left: 10px; font-family: monospace; font-size: 12px;">
                                 <span style="background: #1e293b; padding: 4px 8px; border-radius: 4px; color: #38bdf8;" id="sb-fps">"60 FPS"</span>
-                                <span style="background: #1e293b; padding: 4px 8px; border-radius: 4px; color: #4ade80;">"活跃个体: " <strong id="sb-agents">"35"</strong></span>
+                                <span style="background: #1e293b; padding: 4px 8px; border-radius: 4px; color: #4ade80;"><span id="sb-agents-label">"活跃个体: "</span><strong id="sb-agents">"35"</strong></span>
                             </div>
                         </div>
                     </div>
 
                     // 3D Canvas Viewport
                     <div id="sandbox-3d-viewport" style="flex: 1; width: 100%; height: 100%; position: relative; overflow: hidden;">
+                        // Dedicated unmanaged 3D canvas container to prevent hydration interference
+                        <div id="sandbox-canvas-container" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;"></div>
+
                         // 1. Top Center Floating Landmark Tour Bar
                         <div style="position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 25; display: flex; gap: 5px; background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(8px); padding: 5px 12px; border-radius: 20px; border: 1px solid #334155; box-shadow: 0 8px 24px rgba(0,0,0,0.5); max-width: 95vw; overflow-x: auto;">
+                            <button on:click=start_control_knight style="padding: 3px 10px; font-size: 11px; background: linear-gradient(135deg, #0284c7, #1d4ed8); color: #fff; font-weight: 800; border: 1px solid #38bdf8; border-radius: 12px; cursor: pointer; white-space: nowrap; box-shadow: 0 0 10px rgba(2, 132, 199, 0.4);">"⚔️ 附身圣殿骑士 (WASD)"</button>
+                            <button on:click=start_control_roam style="padding: 3px 8px; font-size: 11px; background: #1e293b; color: #6ee7b7; border: 1px solid #059669; border-radius: 12px; cursor: pointer; white-space: nowrap;">"👥 随机平民"</button>
+                            <span style="font-size: 11px; font-weight: bold; color: #94a3b8; align-self: center; margin: 0 2px; white-space: nowrap;">"|"</span>
                             <span style="font-size: 11px; font-weight: bold; color: #94a3b8; align-self: center; margin-right: 4px; white-space: nowrap;">"🏛️ 地标巡航:"</span>
-                            <button onclick="if (window.focusLandmark) window.focusLandmark('temple_solomon')" style="padding: 3px 8px; font-size: 11px; background: #1e293b; color: #fde047; border: 1px solid #78350f; border-radius: 12px; cursor: pointer; white-space: nowrap;">"第一圣殿"</button>
-                            <button onclick="if (window.focusLandmark) window.focusLandmark('palace_lebanon')" style="padding: 3px 8px; font-size: 11px; background: #1e293b; color: #c084fc; border: 1px solid #581c87; border-radius: 12px; cursor: pointer; white-space: nowrap;">"林宫王廷"</button>
-                            <button onclick="if (window.focusLandmark) window.focusLandmark('royal_granary')" style="padding: 3px 8px; font-size: 11px; background: #1e293b; color: #fbbf24; border: 1px solid #78350f; border-radius: 12px; cursor: pointer; white-space: nowrap;">"战略粮仓"</button>
-                            <button onclick="if (window.focusLandmark) window.focusLandmark('gihon_cistern')" style="padding: 3px 8px; font-size: 11px; background: #1e293b; color: #38bdf8; border: 1px solid #0369a1; border-radius: 12px; cursor: pointer; white-space: nowrap;">"基训水池"</button>
-                            <button onclick="if (window.focusLandmark) window.focusLandmark('central_bazaar')" style="padding: 3px 8px; font-size: 11px; background: #1e293b; color: #f87171; border: 1px solid #991b1b; border-radius: 12px; cursor: pointer; white-space: nowrap;">"彩篷集市"</button>
-                            <button onclick="if (window.focusLandmark) window.focusLandmark('bronze_foundry')" style="padding: 3px 8px; font-size: 11px; background: #1e293b; color: #fb923c; border: 1px solid #9a3412; border-radius: 12px; cursor: pointer; white-space: nowrap;">"青铜工坊"</button>
-                            <button onclick="if (window.focusLandmark) window.focusLandmark('olive_press')" style="padding: 3px 8px; font-size: 11px; background: #1e293b; color: #4ade80; border: 1px solid #166534; border-radius: 12px; cursor: pointer; white-space: nowrap;">"橄榄石磨"</button>
-                            <button onclick="if (window.focusLandmark) window.focusLandmark('four_room_house')" style="padding: 3px 8px; font-size: 11px; background: #1e293b; color: #fed7aa; border: 1px solid #7c2d12; border-radius: 12px; cursor: pointer; white-space: nowrap;">"四室民居"</button>
-                            <button onclick="if (window.focusLandmark) window.focusLandmark('city_gate_elders')" style="padding: 3px 8px; font-size: 11px; background: #1e293b; color: #e2e8f0; border: 1px solid #475569; border-radius: 12px; cursor: pointer; white-space: nowrap;">"六室城门"</button>
+                            <button on:click=move |_| focus_landmark("temple_solomon") style="padding: 3px 8px; font-size: 11px; background: #1e293b; color: #fde047; border: 1px solid #78350f; border-radius: 12px; cursor: pointer; white-space: nowrap;">"第一圣殿"</button>
+                            <button on:click=move |_| focus_landmark("palace_lebanon") style="padding: 3px 8px; font-size: 11px; background: #1e293b; color: #c084fc; border: 1px solid #581c87; border-radius: 12px; cursor: pointer; white-space: nowrap;">"林宫王廷"</button>
+                            <button on:click=move |_| focus_landmark("royal_granary") style="padding: 3px 8px; font-size: 11px; background: #1e293b; color: #fbbf24; border: 1px solid #78350f; border-radius: 12px; cursor: pointer; white-space: nowrap;">"战略粮仓"</button>
+                            <button on:click=move |_| focus_landmark("gihon_cistern") style="padding: 3px 8px; font-size: 11px; background: #1e293b; color: #38bdf8; border: 1px solid #0369a1; border-radius: 12px; cursor: pointer; white-space: nowrap;">"基训水池"</button>
+                            <button on:click=move |_| focus_landmark("central_bazaar") style="padding: 3px 8px; font-size: 11px; background: #1e293b; color: #f87171; border: 1px solid #991b1b; border-radius: 12px; cursor: pointer; white-space: nowrap;">"彩篷集市"</button>
+                            <button on:click=move |_| focus_landmark("bronze_foundry") style="padding: 3px 8px; font-size: 11px; background: #1e293b; color: #fb923c; border: 1px solid #9a3412; border-radius: 12px; cursor: pointer; white-space: nowrap;">"青铜工坊"</button>
+                            <button on:click=move |_| focus_landmark("olive_press") style="padding: 3px 8px; font-size: 11px; background: #1e293b; color: #4ade80; border: 1px solid #166534; border-radius: 12px; cursor: pointer; white-space: nowrap;">"橄榄石磨"</button>
+                            <button on:click=move |_| focus_landmark("four_room_house") style="padding: 3px 8px; font-size: 11px; background: #1e293b; color: #fed7aa; border: 1px solid #7c2d12; border-radius: 12px; cursor: pointer; white-space: nowrap;">"四室民居"</button>
+                            <button on:click=move |_| focus_landmark("bush_flora") style="padding: 3px 8px; font-size: 11px; background: #1e293b; color: #86efac; border: 1px solid #16a34a; border-radius: 12px; cursor: pointer; white-space: nowrap;">"🌿 圣木/灌木"</button>
+                            <button on:click=move |_| focus_landmark("city_gate_elders") style="padding: 3px 8px; font-size: 11px; background: #1e293b; color: #e2e8f0; border: 1px solid #475569; border-radius: 12px; cursor: pointer; white-space: nowrap;">"六室城门"</button>
                         </div>
 
                         // 2. Top Left Floating Environment & Historical Events Bar
                         <div style="position: absolute; top: 12px; left: 16px; z-index: 25; display: flex; flex-direction: column; gap: 6px;">
                             // Day/Night Sky Controller
                             <div style="display: flex; gap: 3px; background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(6px); padding: 3px 6px; border-radius: 8px; border: 1px solid #334155;">
-                                <button onclick="if (window.setTimeOfDay) window.setTimeOfDay('dawn')" style="padding: 3px 6px; font-size: 11px; background: transparent; color: #fda4af; border: none; cursor: pointer;">"🌅 黎明"</button>
-                                <button onclick="if (window.setTimeOfDay) window.setTimeOfDay('noon')" style="padding: 3px 6px; font-size: 11px; background: transparent; color: #fef08a; border: none; cursor: pointer;">"☀️ 正午"</button>
-                                <button onclick="if (window.setTimeOfDay) window.setTimeOfDay('dusk')" style="padding: 3px 6px; font-size: 11px; background: transparent; color: #fdba74; border: none; cursor: pointer;">"🌇 黄昏"</button>
-                                <button onclick="if (window.setTimeOfDay) window.setTimeOfDay('night')" style="padding: 3px 6px; font-size: 11px; background: transparent; color: #93c5fd; border: none; cursor: pointer;">"🌙 星夜"</button>
+                                <button on:click=move |_| set_time_of_day("dawn") style="padding: 3px 6px; font-size: 11px; background: transparent; color: #fda4af; border: none; cursor: pointer;">"🌅 黎明"</button>
+                                <button on:click=move |_| set_time_of_day("noon") style="padding: 3px 6px; font-size: 11px; background: transparent; color: #fef08a; border: none; cursor: pointer;">"☀️ 正午"</button>
+                                <button on:click=move |_| set_time_of_day("dusk") style="padding: 3px 6px; font-size: 11px; background: transparent; color: #fdba74; border: none; cursor: pointer;">"🌇 黄昏"</button>
+                                <button on:click=move |_| set_time_of_day("night") style="padding: 3px 6px; font-size: 11px; background: transparent; color: #93c5fd; border: none; cursor: pointer;">"🌙 星夜"</button>
                             </div>
 
                             // Historical Event Triggers
                             <div style="display: flex; gap: 4px; background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(6px); padding: 3px 6px; border-radius: 8px; border: 1px solid #334155;">
-                                <button onclick="if (window.triggerHistoricalEvent) window.triggerHistoricalEvent('caravan_arrival')" style="padding: 3px 7px; font-size: 11px; background: #1e293b; color: #f59e0b; border: 1px solid #d97706; border-radius: 5px; cursor: pointer;">"🐫 商队抵城"</button>
-                                <button onclick="if (window.triggerHistoricalEvent) window.triggerHistoricalEvent('divine_rain')" style="padding: 3px 7px; font-size: 11px; background: #1e293b; color: #38bdf8; border: 1px solid #0284c7; border-radius: 5px; cursor: pointer;">"🌧️ 祈降甘霖"</button>
-                                <button onclick="if (window.triggerHistoricalEvent) window.triggerHistoricalEvent('jubilee_feast')" style="padding: 3px 7px; font-size: 11px; background: #1e293b; color: #ec4899; border: 1px solid #db2777; border-radius: 5px; cursor: pointer;">"🕊️ 禧年节期"</button>
-                                <button onclick="if (window.triggerHistoricalEvent) window.triggerHistoricalEvent('year_of_abundance')" style="padding: 3px 7px; font-size: 11px; background: #1e293b; color: #4ade80; border: 1px solid #16a34a; border-radius: 5px; cursor: pointer;">"🌾 丰收之年"</button>
+                                <button on:click=move |_| trigger_event("caravan_arrival") style="padding: 3px 7px; font-size: 11px; background: #1e293b; color: #f59e0b; border: 1px solid #d97706; border-radius: 5px; cursor: pointer;">"🐫 商队抵城"</button>
+                                <button on:click=move |_| trigger_event("divine_rain") style="padding: 3px 7px; font-size: 11px; background: #1e293b; color: #38bdf8; border: 1px solid #0284c7; border-radius: 5px; cursor: pointer;">"🌧️ 祈降甘霖"</button>
+                                <button on:click=move |_| trigger_event("bush_bloom") style="padding: 3px 7px; font-size: 11px; background: #1e293b; color: #86efac; border: 1px solid #16a34a; border-radius: 5px; cursor: pointer;">"🌿 圣木郁葱"</button>
+                                <button on:click=move |_| trigger_event("jubilee_feast") style="padding: 3px 7px; font-size: 11px; background: #1e293b; color: #ec4899; border: 1px solid #db2777; border-radius: 5px; cursor: pointer;">"🕊️ 禧年节期"</button>
+                                <button on:click=move |_| trigger_event("year_of_abundance") style="padding: 3px 7px; font-size: 11px; background: #1e293b; color: #4ade80; border: 1px solid #16a34a; border-radius: 5px; cursor: pointer;">"🌾 丰收之年"</button>
                             </div>
                         </div>
 
