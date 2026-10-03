@@ -17,6 +17,7 @@ leptos_meta = { version = "0.8" }
 # serde = "serialization". Lets our Rust structs travel over HTTP
 # (server -> browser) as data. You'll derive it on almost every struct.
 serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", optional = true }
 
 # Only needed by the server (native) build:
 axum = { version = "0.8", features = ["multipart"], optional = true }
@@ -36,7 +37,7 @@ pulldown-cmark = { version = "0.13", optional = true }
 # tracing = structured logging/telemetry (the Rust standard).
 tracing = { version = "0.1", optional = true }
 tracing-subscriber = { version = "0.3", features = ["env-filter"], optional = true }
-tower-http = { version = "0.6", features = ["trace"], optional = true }
+tower-http = { version = "0.6", features = ["trace", "fs"], optional = true }
 
 # Only needed by the browser (WASM) build:
 console_error_panic_hook = { version = "0.1", optional = true }
@@ -63,6 +64,7 @@ ssr = [
     "dep:tracing-subscriber",
     "dep:tower-http",
     "dep:tokio-util",
+    "dep:serde_json",
     "leptos/ssr",
     "leptos_meta/ssr",
     "leptos_router/ssr",

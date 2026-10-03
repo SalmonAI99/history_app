@@ -1,0 +1,568 @@
+/* Historical Map RPG Exploration Simulator Styles */
+:root {
+  --bg-app: #f4ede1;
+  --bg-panel: #ffffff;
+  --bg-card: #fdfbf7;
+  --border-color: #d6cbba;
+  --border-accent: #b5a48b;
+  --text-main: #29251f;
+  --text-muted: #64748b;
+  --primary: #1e3a8a;
+  --primary-hover: #1e40af;
+  --accent-gold: #d97706;
+  --accent-green: #15803d;
+  --accent-blue: #0284c7;
+  --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Georgia, serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-family);
+  background: var(--bg-app);
+  color: var(--text-main);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 8px;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+#game-container {
+  width: 100%;
+  max-width: 880px;
+  background: var(--bg-panel);
+  border: 2px solid var(--border-color);
+  border-radius: 14px;
+  box-shadow: 0 12px 36px rgba(41, 37, 31, 0.12);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Header */
+.game-header {
+  background: #29251f;
+  color: #f8fafc;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-back-btn {
+  color: #e2e8f0;
+  text-decoration: none;
+  font-size: 13px;
+  background: rgba(255, 255, 255, 0.12);
+  padding: 4px 10px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.nav-back-btn:hover {
+  background: rgba(255, 255, 255, 0.24);
+  color: #ffffff;
+}
+
+.epoch-badge {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fde047;
+  letter-spacing: 0.02em;
+}
+
+/* Status Metrics */
+.status-metrics {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.metric {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.metric-icon {
+  font-size: 14px;
+}
+
+.metric-bar-wrap {
+  width: 50px;
+  height: 8px;
+  background: #475569;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.metric-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.3s ease-out;
+}
+
+.fill-res { background: #eab308; }
+.fill-know { background: #38bdf8; }
+.fill-hope { background: #4ade80; }
+
+.metric-val {
+  font-size: 12px;
+  font-weight: 700;
+  color: #e2e8f0;
+  min-width: 20px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hdr-btn {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.hdr-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* Canvas Viewport */
+.canvas-viewport {
+  position: relative;
+  width: 100%;
+  background: #1e293b;
+  overflow: hidden;
+  cursor: crosshair;
+}
+
+#game-canvas {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Proximity Prompt (Floating above player/NPC) */
+.proximity-prompt {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15, 23, 42, 0.85);
+  color: #fde047;
+  padding: 8px 16px;
+  border-radius: 30px;
+  font-size: 14px;
+  font-weight: 700;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  border: 2px solid #eab308;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 20;
+  animation: bounce 0.8s infinite alternate;
+}
+
+@keyframes bounce {
+  from { transform: translateX(-50%) translateY(0); }
+  to { transform: translateX(-50%) translateY(-4px); }
+}
+
+.key-hint {
+  background: #eab308;
+  color: #0f172a;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+/* Minimap Legend */
+.minimap-legend {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  background: rgba(15, 23, 42, 0.75);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  color: #f1f5f9;
+  display: flex;
+  gap: 12px;
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  z-index: 10;
+}
+
+.leg-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.player-dot { background: #38bdf8; box-shadow: 0 0 6px #38bdf8; }
+.npc-dot { background: #facc15; box-shadow: 0 0 6px #facc15; }
+.item-dot { background: #4ade80; box-shadow: 0 0 6px #4ade80; }
+
+/* Virtual D-Pad for Mobile Touch */
+.virtual-dpad {
+  position: absolute;
+  bottom: 14px;
+  right: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  z-index: 25;
+}
+
+.dpad-mid {
+  display: flex;
+  gap: 4px;
+}
+
+.dpad-btn {
+  width: 42px;
+  height: 42px;
+  background: rgba(30, 41, 59, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #f8fafc;
+  border-radius: 8px;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.dpad-btn:active {
+  background: #3b82f6;
+  border-color: #60a5fa;
+}
+
+.dpad-action {
+  background: rgba(234, 179, 8, 0.85);
+  color: #0f172a;
+  border-color: #fef08a;
+  font-weight: 800;
+}
+
+/* Controls Guide Bar */
+.controls-guide-bar {
+  background: #faf6f0;
+  border-top: 1px solid var(--border-color);
+  padding: 8px 16px;
+  font-size: 12px;
+  color: #475569;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Footer */
+.game-footer {
+  background: #f4ede1;
+  border-top: 1px solid var(--border-color);
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.footer-hint {
+  font-size: 12px;
+  color: #78716c;
+}
+
+.lecture-link {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.lecture-link:hover {
+  text-decoration: underline;
+}
+
+/* Modals */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.modal-box {
+  width: 100%;
+  max-width: 580px;
+  background: #ffffff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-hdr {
+  background: #29251f;
+  color: #ffffff;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-hdr h3 {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.modal-close {
+  cursor: pointer;
+  font-size: 18px;
+  color: #cbd5e1;
+}
+
+.modal-content {
+  padding: 20px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+/* Dialogue Modal */
+.dialogue-avatar-banner {
+  font-size: 42px;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.dialogue-body-text {
+  font-size: 15px;
+  line-height: 1.75;
+  color: #334155;
+  margin-bottom: 20px;
+  background: #f8fafc;
+  padding: 14px;
+  border-radius: 8px;
+  border-left: 4px solid var(--primary);
+}
+
+.choices-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.choice-btn {
+  background: #ffffff;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px 16px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.choice-btn:hover {
+  border-color: var(--primary);
+  background: #f0f7ff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(30, 58, 138, 0.08);
+}
+
+.choice-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.choice-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.choice-impact {
+  font-size: 11px;
+  font-weight: 600;
+  color: #059669;
+  margin-top: 2px;
+}
+
+/* Artifacts Modal */
+.box-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+
+.artifacts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.artifact-card {
+  border: 1px dashed var(--border-color);
+  background: #fdfbf7;
+  border-radius: 8px;
+  padding: 12px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.artifact-card.unlocked {
+  border: 1px solid #bbf7d0;
+  background: #f0fdf4;
+}
+
+.art-icon {
+  font-size: 28px;
+}
+
+.art-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.art-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+/* Summary Box */
+.summary-content {
+  text-align: center;
+}
+
+.badge-emblem {
+  font-size: 40px;
+  margin-bottom: 8px;
+}
+
+.summary-content h2 {
+  font-size: 20px;
+  color: #1e3a8a;
+  margin-bottom: 12px;
+}
+
+.summary-text {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #475569;
+  margin-bottom: 20px;
+  text-align: justify;
+}
+
+.knowledge-cards {
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.k-card {
+  background: #f8fafc;
+  border-left: 4px solid var(--primary);
+  border-radius: 4px;
+  padding: 10px 14px;
+}
+
+.k-card strong {
+  font-size: 13px;
+  color: #0f172a;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.k-card p {
+  font-size: 12px;
+  color: #4b5563;
+  line-height: 1.5;
+}
+
+.summary-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.game-btn {
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+}
+
+.game-btn.primary {
+  background: var(--primary);
+  color: #ffffff;
+}
+
+.game-btn.secondary {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+/* Responsive adjustments */
+@media (min-width: 768px) {
+  .virtual-dpad {
+    display: none; /* Hide touch buttons on desktop */
+  }
+}

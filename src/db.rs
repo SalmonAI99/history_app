@@ -171,6 +171,18 @@ pub async fn init() -> Result<(), sqlx::Error> {
     .await?;
 
     sqlx::query(
+        "CREATE TABLE IF NOT EXISTS course_access (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id    INTEGER NOT NULL REFERENCES users(id),
+            deck_id    TEXT NOT NULL,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            UNIQUE(user_id, deck_id)
+        )",
+    )
+    .execute(&mut conn)
+    .await?;
+
+    sqlx::query(
         "CREATE TABLE IF NOT EXISTS world_users (        -- Book World
             user_id    INTEGER PRIMARY KEY REFERENCES users(id),
             username   TEXT NOT NULL,

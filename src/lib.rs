@@ -11,6 +11,7 @@ pub mod classes;
 pub mod files;
 pub mod posts;
 pub mod site;
+pub mod slides;
 pub mod workspace;
 pub mod world;
 

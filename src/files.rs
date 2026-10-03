@@ -44,9 +44,77 @@ impl FileMeta {
     }
 }
 
+/// Metadata for an interactive PPTX slide deck generated in `public/slides`.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct SlideDeckMeta {
+    pub id: String,
+    pub title: String,
+    pub slide_count: usize,
+    pub url: String,
+}
+
 // ----------------------------------------------------------
 //  SERVER FUNCTIONS
 // ----------------------------------------------------------
+
+/// Scans the `public/slides` folder for generated slide lecture notes.
+#[server]
+pub async fn list_slide_decks() -> Result<Vec<SlideDeckMeta>, ServerFnError> {
+    let mut decks = Vec::new();
+    let slides_dir = std::path::Path::new("public/slides");
+    if !tokio::fs::try_exists(slides_dir).await.unwrap_or(false) {
+        return Ok(decks);
+    }
+
+    let Ok(mut entries) = tokio::fs::read_dir(slides_dir).await else {
+        return Ok(decks);
+    };
+
+    while let Ok(Some(entry)) = entries.next_entry().await {
+        let file_type = match entry.file_type().await {
+            Ok(ft) => ft,
+            Err(_) => continue,
+        };
+        if !file_type.is_dir() {
+            continue;
+        }
+
+        let deck_id = entry.file_name().to_string_lossy().to_string();
+        let deck_dir = entry.path();
+        let lecture_json_path = deck_dir.join("lecture.json");
+
+        if !tokio::fs::try_exists(&lecture_json_path).await.unwrap_or(false) {
+            continue;
+        }
+
+        let mut title = deck_id.replace('_', " ");
+        let mut slide_count = 0;
+
+        if let Ok(content) = tokio::fs::read_to_string(&lecture_json_path).await {
+            if let Ok(val) = serde_json::from_str::<serde_json::Value>(&content) {
+                if let Some(t) = val.get("title").and_then(|v| v.as_str()) {
+                    let trimmed = t.trim();
+                    if !trimmed.is_empty() {
+                        title = trimmed.to_string();
+                    }
+                }
+                if let Some(slides) = val.get("slides").and_then(|v| v.as_array()) {
+                    slide_count = slides.len();
+                }
+            }
+        }
+
+        decks.push(SlideDeckMeta {
+            id: deck_id.clone(),
+            title,
+            slide_count,
+            url: format!("/slides/{}", deck_id),
+        });
+    }
+
+    decks.sort_by(|a, b| a.id.cmp(&b.id));
+    Ok(decks)
+}
 
 /// Every file in the library (materials AND videos), newest first.
 /// Any logged-in user may browse the catalogue; downloading is
@@ -155,7 +223,8 @@ fn file_row(f: &FileMeta, is_admin: bool, delete: ServerAction<DeleteFile>) -> i
 // ----------------------------------------------------------
 
 /// Shared by /materials and /member: lists the files of one kind.
-fn files_page(videos_only: bool) -> impl IntoView {
+#[component]
+fn FilesView(videos_only: bool) -> impl IntoView {
     let user = expect_context::<Resource<Option<User>>>();
     let files = Resource::new(|| (), |_| list_files());
     let delete = ServerAction::<DeleteFile>::new();
@@ -195,7 +264,11 @@ fn files_page(videos_only: bool) -> impl IntoView {
             {move || match user.get() {
                 None => ().into_any(),
                 Some(None) => view! {
-                    <p class="note-hint">"Please " <A href="/login">"log in"</A> {login_hint}</p>
+                    <p class="note-hint">
+                        <span>"Please "</span>
+                        <A href="/login">"log in"</A>
+                        <span>{login_hint}</span>
+                    </p>
                 }.into_any(),
                 Some(Some(u)) => {
                     let is_admin = u.role == "admin";
@@ -232,16 +305,93 @@ fn files_page(videos_only: bool) -> impl IntoView {
     }
 }
 
-/// /materials — texts, worksheets, PDFs (anything that isn't a video).
+/// /materials — texts, worksheets, PDFs (anything that isn't a video),
+/// plus interactive slide lecture notes.
 #[component]
 pub fn MaterialsPage() -> impl IntoView {
-    files_page(false)
+    let slides = Resource::new(|| (), |_| list_slide_decks());
+
+    view! {
+        <div class="materials-page">
+            <section class="slides-section" style="margin-bottom: 2.5rem;">
+                <h2>"📖 课程讲义速读 (Slide Lecture Notes)"</h2>
+                <p class="note-hint">
+                    "配套 PPT 讲义精炼速读版与多媒体内容，支持全文检索与分章节复习。"
+                </p>
+
+                <Transition fallback=move || view! { <p class="loading">"正在加载讲义列表..."</p> }>
+                    {move || match slides.get() {
+                        None => ().into_any(),
+                        Some(Err(_)) => view! {
+                            <p class="note-hint">"无法加载讲义列表，请刷新重试。"</p>
+                        }.into_any(),
+                        Some(Ok(decks)) => {
+                            if decks.is_empty() {
+                                view! { <p class="note-hint">"暂无已生成的讲义速读。"</p> }.into_any()
+                            } else {
+                                view! {
+                                    <ul class="doc-list">
+                                        {decks.into_iter().map(|deck| {
+                                            let count_text = format!("{} 页", deck.slide_count);
+                                            let deck_title = deck.title.clone();
+                                            let deck_dir_text = format!("目录: {}", deck.id);
+                                            let deck_url = deck.url.clone();
+                                            view! {
+                                                <li class="doc-item">
+                                                    <div class="doc-heading" style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
+                                                        <div>
+                                                            <div style="font-weight: 700; font-size: 1.15rem; color: #29251f; margin-bottom: 4px;">
+                                                                {deck_title}
+                                                            </div>
+                                                            <div style="font-size: 0.85rem; color: #7a6e60;">
+                                                                <small style="background: #eadecd; padding: 2px 6px; border-radius: 4px; margin-right: 6px; font-weight: 600;">{count_text}</small>
+                                                                <span>{deck_dir_text}</span>
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <A href=deck_url attr:class="button">
+                                                                "打开讲义速读 →"
+                                                            </A>
+                                                        </div>
+                                                    </div>
+                                                </li>
+                                            }
+                                        }).collect_view()}
+                                    </ul>
+                                }.into_any()
+                            }
+                        }
+                    }}
+                </Transition>
+            </section>
+
+            <section class="simulator-callout" style="margin-bottom: 2.5rem; background: #fffdf7; border: 1px solid #ebd3b0; border-radius: 10px; padding: 18px; display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap;">
+                <div>
+                    <h3 style="margin: 0 0 6px 0; font-size: 1.1rem; color: #7c440a;">"🎮 历史情境模拟器"</h3>
+                    <p style="margin: 0; font-size: 0.92rem; color: #8d5b25;">
+                        "控制角色探索耶路撒冷、迦南、所罗门圣殿与现代西墙，通过历史 NPC 对话与剧情体验历史发展。"
+                    </p>
+                </div>
+                <A href="/simulator/index.html" attr:rel="external" attr:class="button" attr:style="background: #a05a2c;">
+                    "进入模拟器 ⚔️"
+                </A>
+            </section>
+
+            <hr style="border: none; border-top: 1px solid #e0d7c7; margin: 2rem 0;" />
+
+            <section class="files-section">
+                <FilesView videos_only=false />
+            </section>
+        </div>
+    }
 }
 
 /// /member — the video shelf.
 #[component]
 pub fn VideosPage() -> impl IntoView {
-    files_page(true)
+    view! {
+        <FilesView videos_only=true />
+    }
 }
 
 // ----------------------------------------------------------

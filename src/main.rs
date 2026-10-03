@@ -56,6 +56,10 @@ async fn main() {
         .route("/upload", post(bookreader::files::ssr::upload))
         // Uploads may be large (videos) — raise the default 2MB cap.
         .layer(DefaultBodyLimit::max(512 * 1024 * 1024))
+        // Interactive PPTX slide media assets & history simulator:
+        .nest_service("/slides-media", tower_http::services::ServeDir::new("public/slides"))
+        .nest_service("/slides_media", tower_http::services::ServeDir::new("public/slides"))
+        .nest_service("/simulator", tower_http::services::ServeDir::new("public/simulator"))
         // ...hand it the Leptos routes (pages + server functions)...
         .leptos_routes(&leptos_options, routes, {
             let leptos_options = leptos_options.clone();

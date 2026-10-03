@@ -62,6 +62,8 @@ pub fn App() -> impl IntoView {
                     <A href="/news">"News"</A>
                     <A href="/teacher">"Teacher"</A>
                     <A href="/classes">"Classes"</A>
+                    <A href="/slides">"讲义速读"</A>
+                    <A href="/simulator/index.html" attr:rel="external">"历史模拟器"</A>
                     <A href="/book_world">"World"</A>
                     <A href="/materials">"Materials"</A>
                     <A href="/member">"Videos"</A>
@@ -85,6 +87,8 @@ pub fn App() -> impl IntoView {
                     <Route path=StaticSegment("admin") view=site::AdminPage/>
                     <Route path=StaticSegment("workspace") view=workspace::WorkspacePage/>
                     <Route path=StaticSegment("materials") view=files::MaterialsPage/>
+                    <Route path=StaticSegment("slides") view=crate::slides::SlidesIndexPage/>
+                    <Route path=(StaticSegment("slides"), ParamSegment("id")) view=crate::slides::SlideDeckPage/>
                     <Route path=StaticSegment("member") view=files::VideosPage/>
                     <Route path=StaticSegment("book_world") view=world::WorldPage/>
 

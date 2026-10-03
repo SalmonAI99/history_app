@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>历史大漫游：迦南、流散与和平探索纪元 — 开放探索模拟器</title>
+  <link rel="stylesheet" href="game.css">
+</head>
+<body>
+  <div id="game-container">
+    <!-- Top Game Bar -->
+    <header class="game-header">
+      <div class="header-left">
+        <a href="/" class="nav-back-btn" title="返回主站">← 主站</a>
+        <div class="epoch-badge" id="current-quest-badge">使命：前往尼罗河畔寻找向导摩西</div>
+      </div>
+      
+      <!-- Resource Status -->
+      <div class="status-metrics">
+        <div class="metric" title="生存资源">
+          <span class="metric-icon">🌾</span>
+          <div class="metric-bar-wrap">
+            <div class="metric-bar-fill fill-res" id="bar-res" style="width: 75%"></div>
+          </div>
+          <span class="metric-val" id="val-res">75</span>
+        </div>
+        <div class="metric" title="文化传承">
+          <span class="metric-icon">📜</span>
+          <div class="metric-bar-wrap">
+            <div class="metric-bar-fill fill-know" id="bar-know" style="width: 60%"></div>
+          </div>
+          <span class="metric-val" id="val-know">60</span>
+        </div>
+        <div class="metric" title="和平与希望">
+          <span class="metric-icon">🕊️</span>
+          <div class="metric-bar-wrap">
+            <div class="metric-bar-fill fill-hope" id="bar-hope" style="width: 80%"></div>
+          </div>
+          <span class="metric-val" id="val-hope">80</span>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <button id="btn-sound-toggle" class="hdr-btn" title="音效开关">🔊</button>
+        <button id="btn-artifacts" class="hdr-btn" title="查看历史宝物箱">🎒 见证宝物 (<span id="artifact-count">0</span>/5)</button>
+      </div>
+    </header>
+
+    <!-- Main Viewport: RPG Exploration Canvas -->
+    <main class="game-main">
+      <div class="canvas-viewport" id="canvas-viewport">
+        <canvas id="game-canvas" width="840" height="460"></canvas>
+        
+        <!-- Floating Prompt when near an NPC/Landmark -->
+        <div class="proximity-prompt" id="proximity-prompt" style="display:none;">
+          <span class="key-hint">空格 / E</span> <span id="prompt-action-text">与 摩西 交谈</span>
+        </div>
+
+        <!-- On-screen Minimap Legend -->
+        <div class="minimap-legend">
+          <span class="leg-item"><span class="dot player-dot"></span> 你 (漫游者)</span>
+          <span class="leg-item"><span class="dot npc-dot"></span> 历史地标/先贤</span>
+          <span class="leg-item"><span class="dot item-dot"></span> 散落古卷/补给</span>
+        </div>
+
+        <!-- Virtual D-Pad for Mobile Touch Controls -->
+        <div class="virtual-dpad" id="virtual-dpad">
+          <button class="dpad-btn dpad-up" data-dir="up">▲</button>
+          <div class="dpad-mid">
+            <button class="dpad-btn dpad-left" data-dir="left">◄</button>
+            <button class="dpad-btn dpad-action" id="dpad-action-btn">💬</button>
+            <button class="dpad-btn dpad-right" data-dir="right">►</button>
+          </div>
+          <button class="dpad-btn dpad-down" data-dir="down">▼</button>
+        </div>
+      </div>
+
+      <!-- Controls Guidance Bar -->
+      <div class="controls-guide-bar">
+        <span>🎮 <strong>移动操作：</strong>键盘方向键 或 <strong>W / A / S / D</strong>（也支持直接点击地图走动）</span>
+        <span>💬 <strong>互动交谈：</strong>走近人物/地标按 <strong>空格键</strong> 或 <strong>E</strong></span>
+      </div>
+    </main>
+
+    <!-- Interactive Dialogue & Story Drawer Modal -->
+    <div class="modal-overlay" id="dialogue-modal" style="display:none;">
+      <div class="modal-box dialogue-box">
+        <div class="modal-hdr">
+          <h3 id="dialogue-speaker-name">先知与向导 · 摩西</h3>
+          <span class="modal-close" id="dialogue-close-btn">✕</span>
+        </div>
+        <div class="modal-content">
+          <div class="dialogue-avatar-banner" id="dialogue-avatar">📜</div>
+          <p class="dialogue-body-text" id="dialogue-body-text">
+            “法老的追兵在后，红海在前。族人们口渴疲惫，对前途感到迷茫。但只要我们心怀信念，彼此扶持，就一定能穿越荒漠，走向那片流淌着奶与蜜的应许之地！”
+          </p>
+
+          <div class="choices-container" id="dialogue-choices">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Artifacts / Knowledge Box Modal -->
+    <div class="modal-overlay" id="artifacts-modal" style="display:none;">
+      <div class="modal-box">
+        <div class="modal-hdr">
+          <h3>🎒 历史见证宝物箱</h3>
+          <span class="modal-close" id="artifacts-close">✕</span>
+        </div>
+        <div class="modal-content">
+          <p class="box-desc">随你在历史地图中漫游探索与关键抉择，收集这5件跨越数千年的历史见证：</p>
+          <div class="artifacts-grid" id="artifacts-grid">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- End Game Completion & Debrief Modal -->
+    <div class="modal-overlay" id="summary-modal" style="display:none;">
+      <div class="modal-box summary-box">
+        <div class="modal-hdr">
+          <h3>🏆 历史大漫游通关结业勋章</h3>
+        </div>
+        <div class="modal-content summary-content">
+          <div class="badge-emblem">🕊️ 📜 🌾</div>
+          <h2 id="summary-title">你完成了全图探索，获得“文明漫游学者”称号！</h2>
+          <p id="summary-narrative" class="summary-text">
+            你亲自走遍了从尼罗河畔到西奈荒漠、从所罗门圣殿到中世纪欧洲街巷，并在哭墙前与卓别林讲坛留下了和平誓愿。你在探索中做出的每一次抉择，正是数千年来人类在这片土地上真实经历的缩影。
+          </p>
+
+          <div class="knowledge-cards">
+            <h4>🌟 课程三大核心领悟（对应讲义要点）：</h4>
+            <div class="k-card">
+              <strong>1. 为什么犹太人历史上极度重视读书与教育？</strong>
+              <p>在中世纪欧洲，法令严禁他们购置土地务农（第33页）。面对流散与偏见，“知识与智慧是唯一抢不走的财富”，代代相传的家庭阅读成了文明存续的关键。</p>
+            </div>
+            <div class="k-card">
+              <strong>2. 哭墙承载着怎样的千年记忆？</strong>
+              <p>公元70年第二圣殿被罗马摧毁后仅留下一截西侧挡土墙（第50页）。流落天涯的游子回到这里抚石哀哭，寄托对和平重聚的无限渴望。</p>
+            </div>
+            <div class="k-card">
+              <strong>3. 面对漫长的历史纷争，未来的答案是什么？</strong>
+              <p>如卓别林在《大独裁者》（第88-90页）中所言：仇恨只会招致毁灭，唯有人性、理智、教育与平等尊重，才能让两族人民共同生活在这片土地上。</p>
+            </div>
+          </div>
+
+          <div class="summary-actions">
+            <button id="btn-replay" class="game-btn secondary">🔄 重新漫游探索</button>
+            <a href="/slides/israel_palestine_1/index.html" class="game-btn primary" target="_blank">📖 研读图文讲义速读 →</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Fast Access -->
+    <footer class="game-footer">
+      <div class="footer-hint">💡 探索提示：游历地图上的五大历史地标，与先哲对话，收集见证宝物！</div>
+      <a href="/slides/israel_palestine_1/index.html" class="lecture-link" target="_blank">📖 打开配套《巴以冲突与犹太历史》讲义速读 →</a>
+    </footer>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>

@@ -50,6 +50,16 @@ pub fn HomePage() -> impl IntoView {
                 <h3>"✍️ Real progress"</h3>
                 <p>"Children save progress and write their own thoughts."</p>
             </div>
+            <div class="card">
+                <h3>"📖 讲义速读"</h3>
+                <p>"课件图文与视频速读讲义，方便随时通读复习与快速检索。"</p>
+                <A href="/slides">"打开讲义速读 →"</A>
+            </div>
+            <div class="card">
+                <h3>"🎮 历史漫游模拟器"</h3>
+                <p>"通过亲历旷野跋涉、圣殿鼎盛、西欧流散与和平呼唤，沉浸式理解历史风云。"</p>
+                <A href="/simulator/index.html" attr:rel="external">"开始历史抉择模拟 →"</A>
+            </div>
         </section>
 
         <section>
