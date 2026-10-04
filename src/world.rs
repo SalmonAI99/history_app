@@ -275,7 +275,7 @@ fn avatar_view(
 #[component]
 pub fn WorldPage() -> impl IntoView {
     let user = expect_context::<Resource<Option<User>>>();
-    let world = Resource::new(|| (), |_| get_world());
+    let world = Resource::new(move || user.get(), move |u| async move { if let Some(Some(_)) = u { get_world().await } else { Err(leptos::server_fn::error::ServerFnError::ServerError("Not logged in".into())) } });
     let move_player = ServerAction::<MovePlayer>::new();
     let say = ServerAction::<Say>::new();
     let say_ref = NodeRef::<leptos::html::Input>::new();

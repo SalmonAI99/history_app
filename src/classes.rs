@@ -71,7 +71,7 @@ pub async fn add_class_comment(class_id: i64, content: String) -> Result<(), Ser
 pub fn ClassesPage() -> impl IntoView {
     let user = expect_context::<Resource<Option<User>>>();
     let create = ServerAction::<CreateClass>::new();
-    let classes = Resource::new(move || create.version().get(), |_| get_classes());
+    let classes = Resource::new(move || (create.version().get(), user.get()), move |(_, u)| async move { if let Some(Some(_)) = u { get_classes().await } else { Ok(vec![]) } });
     view! {
         <Title text="Classes"/>
         <h2>"Classes"</h2>
@@ -120,9 +120,9 @@ pub fn ClassesPage() -> impl IntoView {
 pub fn ClassDetailPage() -> impl IntoView {
     let params = use_params_map();
     let class_id = move || params.read().get("id").and_then(|v| v.parse::<i64>().ok()).unwrap_or(0);
-    let classes = Resource::new(|| (), |_| get_classes());
+    let classes = Resource::new(move || user.get(), move |u| async move { if let Some(Some(_)) = u { get_classes().await } else { Ok(vec![]) } });
     let add_comment = ServerAction::<AddClassComment>::new();
-    let comments = Resource::new(move || (class_id(), add_comment.version().get()), |(id, _)| get_class_comments(id));
+    let comments = Resource::new(move || (class_id(), add_comment.version().get(), user.get()), move |(id, _, u)| async move { if let Some(Some(_)) = u { get_class_comments(id).await } else { Ok(vec![]) } });
     view! {
         <Transition fallback=|| view! { <p>"Loading class…"</p> }>
             {move || match classes.get() {

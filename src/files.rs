@@ -226,7 +226,7 @@ fn file_row(f: &FileMeta, is_admin: bool, delete: ServerAction<DeleteFile>) -> i
 #[component]
 fn FilesView(videos_only: bool) -> impl IntoView {
     let user = expect_context::<Resource<Option<User>>>();
-    let files = Resource::new(|| (), |_| list_files());
+    let files = Resource::new(move || user.get(), move |u| async move { if let Some(Some(_)) = u { list_files().await } else { Ok(vec![]) } });
     let delete = ServerAction::<DeleteFile>::new();
     let back = if videos_only { "/member" } else { "/materials" };
 
@@ -309,7 +309,7 @@ fn FilesView(videos_only: bool) -> impl IntoView {
 /// plus interactive slide lecture notes.
 #[component]
 pub fn MaterialsPage() -> impl IntoView {
-    let slides = Resource::new(|| (), |_| list_slide_decks());
+    let slides = Resource::new(move || user.get(), move |u| async move { if let Some(Some(_)) = u { list_slide_decks().await } else { Ok(vec![]) } });
 
     view! {
         <div class="materials-page">

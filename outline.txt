@@ -1,0 +1,422 @@
+10: let scene, camera, renderer, controls;
+11: let animationFrameId = null;
+12: let container = null;
+13: let canvasMount = null;
+16: const state = {
+51: let simGroup = null;
+52: let groundMesh = null;
+53: let gateObjects = [];
+54: let agents = [];
+55: let graphNodes = [];
+56: let graphEdges = [];
+57: let buildingTiles = [];
+58: let interactiveBuildings = [];
+59: let smokeParticles = [];
+60: let pressWheel = null;
+61: let selectionIndicator = null;
+62: let audioCtx = null;
+63: let cachedBushModel = null;
+64: let bushInstances = [];
+65: let cachedKnightModel = null;
+66: let knightClips = { walk: null, run: null };
+67: let activeMixers = [];
+68: let knightAgents = [];
+71: let ambientLight = null;
+72: let sunLight = null;
+73: let rimLight = null;
+74: let nightTorchesGroup = null;
+75: let rainGroup = null;
+76: let rainActive = false;
+77: let rainTimer = 0;
+78: let followAgent = null;
+79: let targetLookAt = new THREE.Vector3(0, 0, 0);
+80: let isTransitioningCamera = false;
+83: let orthoCamera = null;
+84: let perspCamera = null;
+85: let controlledAgent = null;
+86: let activePrompt = null;
+87: let isMouseDownOnControl = false;
+88: let prevMouseX = 0;
+89: const inputKeys = {
+100: function triggerCitySound(type) {
+108: const now = audioCtx.currentTime;
+111: const osc = audioCtx.createOscillator();
+112: const gain = audioCtx.createGain();
+124: const osc = audioCtx.createOscillator();
+125: const gain = audioCtx.createGain();
+136: const osc = audioCtx.createOscillator();
+137: const gain = audioCtx.createGain();
+148: const osc = audioCtx.createOscillator();
+149: const gain = audioCtx.createGain();
+160: const osc = audioCtx.createOscillator();
+161: const gain = audioCtx.createGain();
+180: function showFloatToast(msg) {
+181: let toast = document.getElementById('sb-toast');
+203: const target = canvasMount || container;
+219: window.initSandbox3D = function (domContainer) {
+229: const width = container.clientWidth || 840;
+230: const height = container.clientHeight || 520;
+238: const aspect = width / height;
+239: const d = 36;
+283: window.addEventListener('resize', onWindowResize);
+286: let lastTime = performance.now();
+287: let frameCount = 0;
+288: let lastFpsUpdate = performance.now();
+290: function animate(currentTime) {
+293: const delta = Math.min((currentTime - lastTime) / 1000, 0.1);
+310: const charPos = controlledAgent.mesh.position;
+311: const rotY = controlledAgent.mesh.rotation.y;
+312: const camDist = 7.2;
+313: const camHeight = 4.6;
+314: const targetCamX = charPos.x - Math.sin(rotY) * camDist;
+315: const targetCamZ = charPos.z - Math.cos(rotY) * camDist;
+316: const targetCamY = charPos.y + camHeight;
+320: const lookDist = 3.5;
+321: const targetLookX = charPos.x + Math.sin(rotY) * lookDist;
+322: const targetLookZ = charPos.z + Math.cos(rotY) * lookDist;
+323: const targetLookY = charPos.y + 1.35;
+358: const positions = rainGroup.geometry.attributes.position.array;
+375: const phases = ['dawn', 'noon', 'dusk', 'night'];
+376: const nextIdx = (phases.indexOf(state.timeOfDay) + 1) % phases.length;
+377: window.setTimeOfDay(phases[nextIdx]);
+387: const animDelta = delta * (state.isPlaying ? state.speedMultiplier : (controlledAgent ? 1.0 : 0));
+406: function setupLighting() {
+417: const d = 45;
+431: const torchPositions = [
+443: const pl = new THREE.PointLight(0xf59e0b, 0, 16);
+454: function setupGround() {
+455: const groundGeo = new THREE.PlaneGeometry(120, 120);
+456: const groundMat = new THREE.MeshStandardMaterial({
+467: const gridHelper = new THREE.GridHelper(100, 50, 0x9a3412, 0x78350f);
+475: window.setTimeOfDay = function (time) {
+535: function notifyCitizensPhaseChange(newPhase) {
+540: const sched = ROUTINE_SCHEDULE[c.role] && ROUTINE_SCHEDULE[c.role][newPhase];
+545: const tx = sched.target[0] + (Math.random() - 0.5) * (sched.spread || 4.0);
+546: const tz = sched.target[1] + (Math.random() - 0.5) * (sched.spread || 4.0);
+553: function setNightTorches(enabled) {
+563: window.setSimulationMode = function () {
+594: function buildCamelMesh(cargo) {
+595: const group = new THREE.Group();
+596: const camelMat = new THREE.MeshStandardMaterial({ color: 0xc2854e, roughness: 0.8 });
+597: const cargoMat = new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.6 });
+599: const body = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.2, 1.0), camelMat);
+604: const hump = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.7, 0.8), camelMat);
+608: const neck = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1.2, 0.5), camelMat);
+613: const head = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.5, 0.5), camelMat);
+619: const leg = new THREE.Mesh(new THREE.BoxGeometry(0.25, 1.3, 0.25), camelMat);
+627: const pack = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.7, 0.4), cargoMat);
+640: function registerBuilding(data, group, radius = 9.0) {
+653: function loadBushAsset(onLoaded) {
+659: function doLoad() {
+664: const loader = new THREE.GLTFLoader();
+665: const modelPath = '/models/Bush03.glb';
+712: const s = document.createElement('script');
+721: function createBushInstance(scale = 1.0) {
+723: const instance = cachedBushModel.clone(true);
+731: let isKnightLoading = false;
+732: let knightLoadCallbacks = [];
+734: function loadKnightAsset(onLoaded) {
+744: function doLoad() {
+749: const loader = new THREE.GLTFLoader();
+750: const walkingPath = '/models/knight/knight_walking.glb';
+751: const runningPath = '/models/knight/knight_running.glb';
+776: const cbs = knightLoadCallbacks.slice();
+786: const cbs = knightLoadCallbacks.slice();
+803: const s = document.createElement('script');
+812: function createKnightAgent(x, z, role = '圣殿重甲骑士', isHero = false) {
+815: let knightMesh = null;
+822: const scale = 1.05;
+826: let mixer = null;
+827: let actions = {};
+841: const agentObj = {
+867: const nextAction = animName ? this.actions[animName] : null;
+868: const prevAction = this.currentAnim ? this.actions[this.currentAnim] : null;
+898: function spawnCityKnights() {
+910: function buildCanaanBushes() {
+916: const mainBushGroup = new THREE.Group();
+919: const mainMesh = createBushInstance(1.35);
+925: const planterMat = new THREE.MeshStandardMaterial({ color: 0xfef3c7, roughness: 0.6 });
+926: const planter = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.8, 0.45, 16), planterMat);
+932: const goldTrim = new THREE.Mesh(new THREE.TorusGeometry(1.65, 0.08, 8, 24), new THREE.MeshStandardMaterial({ color: 0xfde047, metalness: 0.7, roughness: 0.3 }));
+948: const oasisPositions = [
+955: const b = createBushInstance(bscale);
+965: const orchardPositions = [
+971: const b = createBushInstance(bscale);
+981: const domesticPositions = [
+987: const b = createBushInstance(bscale);
+998: function initTempleCitySimulation() {
+1021: function buildSolomonTempleComplex(x, z) {
+1022: const group = new THREE.Group();
+1025: const goldMat = new THREE.MeshStandardMaterial({ color: 0xfde047, metalness: 0.7, roughness: 0.2 });
+1026: const limestoneMat = new THREE.MeshStandardMaterial({ color: 0xfef3c7, roughness: 0.55 });
+1027: const bronzeMat = new THREE.MeshStandardMaterial({ color: 0xc2854e, metalness: 0.65, roughness: 0.35 });
+1029: const terrace = new THREE.Mesh(new THREE.BoxGeometry(26, 1.2, 32), limestoneMat);
+1034: const temple = new THREE.Mesh(new THREE.BoxGeometry(15, 9.5, 20), limestoneMat);
+1040: const cornice = new THREE.Mesh(new THREE.BoxGeometry(16, 0.9, 21), goldMat);
+1044: const porch = new THREE.Mesh(new THREE.BoxGeometry(15, 8.0, 5.5), limestoneMat);
+1049: const porchRoof = new THREE.Mesh(new THREE.BoxGeometry(15.6, 0.7, 5.8), goldMat);
+1055: const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.55, 10, 16), bronzeMat);
+1060: const capital = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.55, 1.5, 16), goldMat);
+1066: const altar = new THREE.Mesh(new THREE.BoxGeometry(5.0, 2.0, 5.0), bronzeMat);
+1073: const horn = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.6, 0.5), goldMat);
+1081: const p = new THREE.Mesh(
+1096: const basin = new THREE.Mesh(new THREE.CylinderGeometry(2.4, 1.9, 1.6, 16), bronzeMat);
+1101: const water = new THREE.Mesh(new THREE.CircleGeometry(2.2, 16), new THREE.MeshBasicMaterial({ color: 0x38bdf8 }));
+1116: function buildPalaceOfLebanon(x, z) {
+1117: const group = new THREE.Group();
+1120: const cedarMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.7 });
+1121: const stoneMat = new THREE.MeshStandardMaterial({ color: 0xfef3c7, roughness: 0.6 });
+1122: const royalPurple = new THREE.MeshStandardMaterial({ color: 0x6b21a8, roughness: 0.5 });
+1124: const hall = new THREE.Mesh(new THREE.BoxGeometry(16, 7.0, 14), stoneMat);
+1131: const col = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 7.0, 12), cedarMat);
+1137: const upper = new THREE.Mesh(new THREE.BoxGeometry(12, 3.8, 10), cedarMat);
+1143: const banner = new THREE.Mesh(new THREE.BoxGeometry(1.4, 4.0, 0.1), royalPurple);
+1158: function buildRoyalGranary(x, z) {
+1159: const group = new THREE.Group();
+1162: const stoneMat = new THREE.MeshStandardMaterial({ color: 0xd6cbba, roughness: 0.8 });
+1163: const mudMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.9 });
+1164: const sackMat = new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.7 });
+1171: const silo = new THREE.Mesh(new THREE.CylinderGeometry(s.r, s.r * 1.08, s.h, 16), stoneMat);
+1176: const cone = new THREE.Mesh(new THREE.ConeGeometry(s.r * 1.15, 2.2, 16), mudMat);
+1182: const depot = new THREE.Mesh(new THREE.BoxGeometry(13, 3.8, 6.5), mudMat);
+1188: const sack = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.6, 0.7), sackMat);
+1203: function buildGihonCistern(x, z) {
+1204: const group = new THREE.Group();
+1207: const stoneMat = new THREE.MeshStandardMaterial({ color: 0xd6cbba, roughness: 0.75 });
+1208: const woodMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.7 });
+1209: const waterMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.1, transparent: true, opacity: 0.85 });
+1211: const basinBorder = new THREE.Mesh(new THREE.BoxGeometry(14, 0.9, 12), stoneMat);
+1216: const pool = new THREE.Mesh(new THREE.PlaneGeometry(12.4, 10.4), waterMat);
+1222: const step = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.2, 0.6), stoneMat);
+1227: const p1 = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 3.8), woodMat);
+1230: const p2 = p1.clone();
+1233: const beam = new THREE.Mesh(new THREE.BoxGeometry(6.4, 0.25, 0.25), woodMat);
+1247: function buildBronzeFoundry(x, z) {
+1248: const group = new THREE.Group();
+1251: const stoneMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.85 });
+1252: const copperMat = new THREE.MeshStandardMaterial({ color: 0xea580c, metalness: 0.6, roughness: 0.35 });
+1253: const glowMat = new THREE.MeshBasicMaterial({ color: 0xf97316 });
+1255: const workshop = new THREE.Mesh(new THREE.BoxGeometry(11, 4.8, 9), stoneMat);
+1260: const chimney = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.9, 6.8, 12), stoneMat);
+1264: const forge = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.8, 0.4), glowMat);
+1268: const anvil = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.9, 0.6), copperMat);
+1273: const bar = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.25, 0.4), copperMat);
+1288: function buildOlivePress(x, z) {
+1289: const group = new THREE.Group();
+1292: const stoneMat = new THREE.MeshStandardMaterial({ color: 0xd6cbba, roughness: 0.7 });
+1293: const woodMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.7 });
+1294: const jarMat = new THREE.MeshStandardMaterial({ color: 0xc2410c, roughness: 0.8 });
+1296: const roof = new THREE.Mesh(new THREE.BoxGeometry(11, 0.4, 9), woodMat);
+1302: const post = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 4.2), woodMat);
+1308: const basin = new THREE.Mesh(new THREE.CylinderGeometry(2.4, 2.6, 0.9, 16), stoneMat);
+1320: const jar = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.25, 1.1, 10), jarMat);
+1336: function buildCentralBazaar(x, z) {
+1337: const group = new THREE.Group();
+1340: const woodMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.7 });
+1341: const colors = [0x0284c7, 0xd97706, 0x9333ea, 0xe11d48, 0x16a34a, 0xf59e0b];
+1343: const stalls = [
+1351: const counter = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.9, 1.8), woodMat);
+1356: const awningMat = new THREE.MeshStandardMaterial({ color: s.c, roughness: 0.6 });
+1357: const awning = new THREE.Mesh(new THREE.BoxGeometry(4.0, 0.1, 2.6), awningMat);
+1365: const post = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 2.4), woodMat);
+1382: function buildFourRoomHouses(x, z) {
+1383: const group = new THREE.Group();
+1386: const mudbrickMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.9 });
+1387: const cedarMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.7 });
+1388: const stoneMat = new THREE.MeshStandardMaterial({ color: 0xd6cbba, roughness: 0.8 });
+1390: const h1 = new THREE.Mesh(new THREE.BoxGeometry(13, 5.2, 10), mudbrickMat);
+1396: const roof1 = new THREE.Mesh(new THREE.BoxGeometry(13.4, 0.4, 10.4), cedarMat);
+1400: const parapet = new THREE.Mesh(new THREE.BoxGeometry(13.6, 0.6, 0.3), stoneMat);
+1405: const pillar = new THREE.Mesh(new THREE.BoxGeometry(0.6, 4.8, 0.6), stoneMat);
+1410: const h2 = new THREE.Mesh(new THREE.BoxGeometry(10, 4.2, 8), mudbrickMat);
+1425: function buildSixChamberGate(x, z) {
+1426: const group = new THREE.Group();
+1429: const stoneMat = new THREE.MeshStandardMaterial({ color: 0xd6cbba, roughness: 0.75 });
+1430: const woodMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.7 });
+1433: const block = new THREE.Mesh(new THREE.BoxGeometry(8.5, 7.8, 9.5), stoneMat);
+1439: const parapet = new THREE.Mesh(new THREE.BoxGeometry(8.7, 0.9, 9.7), woodMat);
+1444: const arch = new THREE.Mesh(new THREE.BoxGeometry(5.0, 1.6, 9.5), stoneMat);
+1449: const elderBench = new THREE.Mesh(new THREE.BoxGeometry(6.0, 0.7, 1.2), stoneMat);
+1454: const elder = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.4, 1.1), new THREE.MeshStandardMaterial({ color: 0xfef08a }));
+1469: function buildPerimeterWalls() {
+1470: const wallMat = new THREE.MeshStandardMaterial({ color: 0xd6cbba, roughness: 0.8 });
+1472: const nWall = new THREE.Mesh(new THREE.BoxGeometry(64, 4.6, 2.0), wallMat);
+1477: const wWall = new THREE.Mesh(new THREE.BoxGeometry(2.0, 4.6, 66), wallMat);
+1482: const eWall = new THREE.Mesh(new THREE.BoxGeometry(2.0, 4.6, 66), wallMat);
+1488: const sWall = new THREE.Mesh(new THREE.BoxGeometry(20, 4.6, 2.0), wallMat);
+1496: const tower = new THREE.Mesh(new THREE.BoxGeometry(4.2, 7.5, 4.2), wallMat);
+1507: const ROUTINE_SCHEDULE = {
+1738: function spawnAncientCitizens() {
+1739: const roles = [
+1748: const count = state.templeCity.citizenCount;
+1749: const curPhase = state.timeOfDay || 'dusk';
+1752: const r = roles[i % roles.length];
+1753: const citizenGroup = new THREE.Group();
+1755: const robe = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.45, 1.4), new THREE.MeshStandardMaterial({ color: r.color }));
+1760: const head = new THREE.Mesh(new THREE.SphereGeometry(0.28, 12, 12), new THREE.MeshStandardMaterial({ color: 0xfed7aa }));
+1764: const sched = (ROUTINE_SCHEDULE[r.name] && ROUTINE_SCHEDULE[r.name][curPhase]) || {
+1774: const cx = sched.target[0] + (Math.random() - 0.5) * (sched.spread || 5.0);
+1775: const cz = sched.target[1] + (Math.random() - 0.5) * (sched.spread || 5.0);
+1779: const agentObj = {
+1806: function updateTempleCitySimulation(dt) {
+1818: const progress = (p.position.y - p.startY) / p.maxDist;
+1827: const timeNow = performance.now() * 0.001;
+1843: const dist = c.mesh.position.distanceTo(c.target);
+1850: const pt = c.patrolPoints[c.currentPatrolIdx];
+1857: const dir = new THREE.Vector3().subVectors(c.target, c.mesh.position).normalize();
+1871: const sched = (ROUTINE_SCHEDULE[c.role] && ROUTINE_SCHEDULE[c.role][state.timeOfDay]) || null;
+1879: const tx = sched.target[0] + (Math.random() - 0.5) * (sched.spread || 4.0);
+1880: const tz = sched.target[1] + (Math.random() - 0.5) * (sched.spread || 4.0);
+1889: const other = agents[j];
+1891: const distToOther = c.mesh.position.distanceTo(other.mesh.position);
+1922: const dist = c.mesh.position.distanceTo(c.target);
+1944: const dir = new THREE.Vector3().subVectors(c.target, c.mesh.position).normalize();
+1994: function updateSimulation(dt) {
+2001: function highlightBuilding(building) {
+2003: const geo = new THREE.RingGeometry(0.85, 1.0, 32);
+2004: const mat = new THREE.MeshBasicMaterial({ color: 0xfbbf24, side: THREE.DoubleSide });
+2012: const scale = building.radius || 9.0;
+2017: function clearBuildingHighlight() {
+2021: function setupRaycaster() {
+2022: const raycaster = new THREE.Raycaster();
+2023: const mouse = new THREE.Vector2();
+2027: const rect = renderer.domElement.getBoundingClientRect();
+2032: const intersects = raycaster.intersectObjects(simGroup.children, true);
+2034: let isInteractive = state.spawnToolActive;
+2036: let obj = intersects[i].object;
+2051: const rect = renderer.domElement.getBoundingClientRect();
+2059: const groundHits = raycaster.intersectObject(groundMesh);
+2061: const pt = groundHits[0].point;
+2070: const intersects = raycaster.intersectObjects(simGroup.children, true);
+2073: let hitBuilding = null;
+2074: let hitAgent = null;
+2077: let obj = intersects[i].object;
+2109: let hit = intersects[0].object;
+2110: let found = agents.find((a) => a.mesh === hit || (a.mesh.children && a.mesh.children.includes(hit)));
+2130: function spawnSingleCitizenAt(x, z) {
+2131: const roles = ['利未祭司', '推罗工匠', '橄榄农夫', '希伯来学者', '城邦平民', '远洋商贾'];
+2132: const colors = [0xfef08a, 0x38bdf8, 0x22c55e, 0xf97316, 0xfed7aa, 0xa855f7];
+2133: const roleIdx = agents.length % roles.length;
+2134: const rRole = roles[roleIdx];
+2135: const curPhase = state.timeOfDay || 'dusk';
+2137: const citizenGroup = new THREE.Group();
+2138: const robe = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.45, 1.4), new THREE.MeshStandardMaterial({ color: colors[roleIdx] }));
+2143: const head = new THREE.Mesh(new THREE.SphereGeometry(0.28, 12, 12), new THREE.MeshStandardMaterial({ color: 0xfed7aa }));
+2150: const sched = (ROUTINE_SCHEDULE[rRole] && ROUTINE_SCHEDULE[rRole][curPhase]) || null;
+2152: const agentObj = {
+2184: window.focusLandmark = function (id) {
+2185: const b = interactiveBuildings.find((item) => item.id === id);
+2202: window.toggleAgentFollow = function () {
+2217: let keyControlsInitialized = false;
+2219: function setupCharacterKeyControls() {
+2223: window.addEventListener('keydown', (e) => {
+2248: window.exitControlMode();
+2253: window.addEventListener('keyup', (e) => {
+2270: window.addEventListener('mouseup', () => {
+2274: window.addEventListener('mousemove', (e) => {
+2276: const dx = e.clientX - prevMouseX;
+2283: function updateControlledAgent(delta) {
+2286: const mesh = controlledAgent.mesh;
+2287: const isKnight = controlledAgent.type === 'ancient_knight';
+2288: const turnSpeed = 3.2;
+2297: const moveSpeed = inputKeys.sprint ? (isKnight ? 9.6 : 9.2) : (isKnight ? 4.8 : 5.0);
+2298: let forwardDist = 0;
+2307: const rotY = mesh.rotation.y;
+2308: const dx = Math.sin(rotY) * forwardDist;
+2309: const dz = Math.cos(rotY) * forwardDist;
+2311: let nextX = mesh.position.x + dx;
+2312: let nextZ = mesh.position.z + dz;
+2317: const inGateCorridor = Math.abs(nextX) < 4.5 && nextZ > 28 && nextZ < 46;
+2353: function updateControlProximityPrompt() {
+2356: const charPos = controlledAgent.mesh.position;
+2357: let closestItem = null;
+2358: let minDistance = 5.5;
+2363: const d = charPos.distanceTo(b.mesh.position);
+2372: const d = charPos.distanceTo(bush.position);
+2385: const d = charPos.distanceTo(a.mesh.position);
+2399: function triggerControlledAction() {
+2415: const other = activePrompt.data;
+2423: const b = activePrompt.data;
+2425: window.triggerBuildingAction(b.id);
+2432: function showControlHUD(agent) {
+2433: let hud = document.getElementById('sb-control-hud');
+2455: const target = canvasMount || container;
+2477: let promptEl = document.getElementById('sb-control-prompt');
+2501: const target = canvasMount || container;
+2506: function hideControlHUD() {
+2507: const hud = document.getElementById('sb-control-hud');
+2509: const promptEl = document.getElementById('sb-control-prompt');
+2513: function renderControlPromptHUD(item) {
+2514: const promptEl = document.getElementById('sb-control-prompt');
+2521: let text = '';
+2534: window.takeControlOfAgent = function (agent) {
+2553: const charPos = agent.mesh.position;
+2558: const rotY = agent.mesh.rotation.y;
+2559: const camDist = 7.2;
+2560: const camHeight = 4.6;
+2575: const card = document.getElementById('sb-inspector');
+2587: window.takeControlOfKnight = function () {
+2588: let knight = agents.find((a) => a.type === 'ancient_knight');
+2590: window.takeControlOfAgent(knight);
+2600: window.takeControlOfAgent(knight);
+2605: window.controlRandomCitizen = function () {
+2606: const citizens = agents.filter((a) => a.type === 'ancient_citizen');
+2609: const poolSize = Math.max(1, Math.min(citizens.length, 15));
+2610: const pick = citizens.length > 0 ? citizens[Math.floor(Math.random() * poolSize)] : agents[0];
+2611: window.takeControlOfAgent(pick);
+2614: window.exitControlMode = function () {
+2632: window.toggleSpawnTool = function () {
+2644: window.triggerHistoricalEvent = function (eventType) {
+2646: const cargo = '推罗特级紫布与没药';
+2648: const camel = buildCamelMesh(cargo);
+2652: const camelObj = {
+2706: function triggerDivineRain() {
+2708: const rainCount = 500;
+2709: const rainGeo = new THREE.BufferGeometry();
+2710: const rainPositions = new Float32Array(rainCount * 3);
+2717: const rainMat = new THREE.PointsMaterial({ color: 0x7dd3fc, size: 0.35, transparent: true, opacity: 0.7 });
+2728: function drawMinimap() {
+2729: const canvas = document.getElementById('sb-minimap');
+2731: const ctx = canvas.getContext('2d');
+2732: const w = canvas.width;
+2733: const h = canvas.height;
+2753: const mx = w / 2 + (b.mesh.position.x / 80) * (w * 0.68);
+2754: const my = h / 2 + (b.mesh.position.z / 80) * (h * 0.68);
+2766: const mx = w / 2 + (a.mesh.position.x / 80) * (w * 0.68);
+2767: const my = h / 2 + (a.mesh.position.z / 80) * (h * 0.68);
+2769: let col = '#fed7aa';
+2770: let rad = 1.6;
+2786: const mx = w / 2 + (controlledAgent.mesh.position.x / 80) * (w * 0.68);
+2787: const my = h / 2 + (controlledAgent.mesh.position.z / 80) * (h * 0.68);
+2797: const rotY = controlledAgent.mesh.rotation.y;
+2808: const cx = w / 2 + (controls.target.x / 80) * (w * 0.68);
+2809: const cy = h / 2 + (controls.target.z / 80) * (h * 0.68);
+2819: function updateStatsHUD() {
+2820: const fpsEl = document.getElementById('sb-fps');
+2821: const countEl = document.getElementById('sb-agents');
+2826: window.closeInspector = function () {
+2831: const card = document.getElementById('sb-inspector');
+2835: function updateInspectorHUD() {
+2836: const card = document.getElementById('sb-inspector');
+2845: const title = document.getElementById('sb-insp-title');
+2846: const details = document.getElementById('sb-insp-body');
+2850: const b = state.selectedBuilding;
+2882: const a = state.selectedAgent;
+2892: let agentContent = '';
+2919: let stateTag = '🚶 赶往工位途中';
+2926: const phaseLabels = { dawn: '🌅 破晓晨曦', noon: '☀️ 正午艳阳', dusk: '🌇 晚霞暮霭', night: '🌙 星夜更深' };
+2965: window.triggerBuildingAction = function (id) {
+3019: function updateControlsUI() {
+3020: const slidersContainer = document.getElementById('sb-sliders');
+3050: window.plantBush = function (x, z, scale = 1.0) {
+3052: const b = createBushInstance(scale);
+3063: window.setSandboxParam = function (key, value) {
+3064: const val = parseFloat(value);
+3072: window.toggleSandboxPlayback = function () {
+3077: window.setSandboxSpeed = function (speed) {
+3081: function onWindowResize() {
+3083: const w = container.clientWidth || 840;
+3084: const h = container.clientHeight || 520;
+3085: const aspect = w / h;
+3086: const d = 36;
+3101: window._sandbox = {

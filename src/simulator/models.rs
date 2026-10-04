@@ -36,6 +36,10 @@ pub struct PlayerState {
     pub id: String,
     pub x: f64,
     pub y: f64,
+    pub z: f64,
+    pub ry: f64,
+    pub anim: String,
+    pub model: String,
     pub color: String,
     pub class: PlayerClass,
     pub level: u32,
@@ -50,6 +54,7 @@ pub enum ClientMessage {
     ChangeScene { scene: String, x: f64, y: f64 },
     LevelUp,
     Interact,
+    Move3D { x: f64, y: f64, z: f64, ry: f64, anim: String, model: String },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -61,4 +66,5 @@ pub enum ServerMessage {
     PlayerMoved { id: String, x: f64, y: f64 },
     PlayerUpdated { player: PlayerState },
     ShowSlideQuestion { target_id: String, artifact_id: String, question: String },
+    PlayerMoved3D { id: String, x: f64, y: f64, z: f64, ry: f64, anim: String, model: String },
 }

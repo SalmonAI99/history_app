@@ -173,7 +173,7 @@ pub fn WorkspacePage() -> impl IntoView {
     // After saving or deleting, the list refetches itself.
     let docs = Resource::new(
         move || (save_writing.version().get(), delete_action.version().get()),
-        |_| get_my_documents(),
+        move |(_, _)| async move { if let Some(Some(_)) = user.get() { get_my_documents().await } else { Ok(vec![]) } },
     );
 
     view! {

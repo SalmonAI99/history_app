@@ -44,6 +44,10 @@ async fn handle_socket(socket: WebSocket, state: Arc<GameState>) {
         id: player_id.clone(),
         x: 100.0,
         y: 330.0,
+        z: 0.0,
+        ry: 0.0,
+        anim: "idle".to_string(),
+        model: "knight".to_string(),
         color: player_color,
         class: PlayerClass::Explorer,
         level: 1,
@@ -129,6 +133,19 @@ async fn handle_socket(socket: WebSocket, state: Arc<GameState>) {
                         if let Some(p) = p_copy {
                             let _ = state_clone.tx.send(ServerMessage::PlayerUpdated { player: p });
                         }
+                    }
+                    ClientMessage::Move3D { x, y, z, ry, anim, model } => {
+                        if let Some(p) = state_clone.players.write().await.get_mut(&pid) {
+                            p.x = x;
+                            p.y = y;
+                            p.z = z;
+                            p.ry = ry;
+                            p.anim = anim.clone();
+                            p.model = model.clone();
+                        }
+                        let _ = state_clone.tx.send(ServerMessage::PlayerMoved3D {
+                            id: pid.clone(), x, y, z, ry, anim, model
+                        });
                     }
                     ClientMessage::Interact => {
                         let p = state_clone.players.read().await.get(&pid).cloned();
