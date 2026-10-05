@@ -20,7 +20,7 @@ This allows lecture decks to integrate seamlessly into BookReader's single-page 
 
 ### 3. Regenerate Rust code from existing `lecture.json`:
 ```bash
-.venv/bin/python pipeline/convert_pptx.py --from-json public/slides/israel_palestine_1/lecture.json
+.venv/bin/python pipeline/convert_pptx.py --from-json content/slides/israel_palestine_1/lecture.json
 ```
 
 Once processed, the new deck is instantly registered and accessible via Leptos router:
@@ -33,13 +33,13 @@ Once processed, the new deck is instantly registered and accessible via Leptos r
 ## 🛠️ Pipeline Architecture
 
 ```
-storage/<deck>.pptx (or public/slides/<deck>/lecture.json)
+storage/<deck>.pptx (or content/slides/<deck>/lecture.json)
        │
        ▼
 [pipeline/convert_pptx.py]
        │
        ├── 1. Media Extraction
-       │      • Extracts embedded images and MP4 videos to public/slides/<deck_id>/media/
+       │      • Extracts embedded images and MP4 videos to content/slides/<deck_id>/media/
        │      • Axum serves media at /slides-media/<deck_id>/... with HTTP 206 range streaming
        │
        ├── 2. Shape, Geometry & Text Parsing

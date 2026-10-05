@@ -148,6 +148,41 @@
     object-fit: contain;
 }
 
+// Shown instead of the <video> when the course isn't unlocked.
+.course-video-locked {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    max-height: min(62vw, 610px);
+}
+
+.course-video-locked img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: blur(2px) brightness(0.55);
+}
+
+.course-video-locked-overlay {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 8px;
+    padding: 16px;
+    color: #fffaf0;
+    text-align: center;
+}
+
+.course-video-locked-icon {
+    font-size: 2rem;
+}
+
+.course-video-locked-overlay a {
+    color: #dfc79f;
+}
+
 .course-video-now-playing {
     display: grid;
     gap: 4px;

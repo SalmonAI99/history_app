@@ -1,4 +1,5 @@
 // Shared application modules for SSR and hydration builds, plus the browser `hydrate` entry point.
+#![recursion_limit = "256"]
 
 pub mod app;
 pub mod auth;

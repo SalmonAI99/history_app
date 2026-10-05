@@ -130,11 +130,14 @@ pub async fn search_content(query: String) -> Result<Vec<SearchResult>, ServerFn
         .into_iter()
         .collect();
     for deck in ALL_DECKS {
-        let deck_href = ALL_COURSES
+        // Decks are only reachable through their course; skip orphans.
+        let Some(deck_href) = ALL_COURSES
             .iter()
             .find(|course| course.slide_decks.contains(&deck.id))
             .map(|course| format!("/classes/{}?deck={}", course.id, deck.id))
-            .unwrap_or_else(|| format!("/slides/{}", deck.id));
+        else {
+            continue;
+        };
 
         candidates.push(SearchCandidate {
             title: deck.title.to_string(),

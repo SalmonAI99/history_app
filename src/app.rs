@@ -108,13 +108,15 @@ fn Nav() -> impl IntoView {
     view! {
         <nav class="user-nav">
             <Suspense fallback=|| ()>
-                {move || match user.get() {
-                    None => ().into_any(), // still loading
-                    Some(None) => view! {
+                // Suspend + .await (not .get()) so this boundary always sees the
+                // user resource resolve; with .get() SSR could intermittently
+                // never close this Suspense and the page stayed "loading".
+                {move || Suspend::new(async move { match user.await {
+                    None => view! {
                         // guest
                         <A href="/login">"Log in"</A>
                     }.into_any(),
-                    Some(Some(u)) => view! {
+                    Some(u) => view! {
                         // logged in — admins also see the publishing page link
                         {if u.role == "admin" {
                             view! { <A href="/admin">"Admin"</A> }.into_any()
@@ -128,7 +130,7 @@ fn Nav() -> impl IntoView {
                             <button type="submit">"Log out"</button>
                         </ActionForm>
                     }.into_any(),
-                }}
+                }})}
             </Suspense>
         </nav>
     }

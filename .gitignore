@@ -8,3 +8,4 @@ storage/
 .venv/
 public/models
 .agent
+content/

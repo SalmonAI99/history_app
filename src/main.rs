@@ -1,10 +1,11 @@
 // SSR server entry point: initializes runtime services and configures Axum/Leptos routes.
+#![recursion_limit = "256"]
 
 #[cfg(feature = "ssr")]
 #[tokio::main]
 async fn main() {
     use axum::extract::DefaultBodyLimit;
-    use axum::routing::{get, post};
+    use axum::routing::get;
     use axum::Router;
     use leptos::prelude::*;
     use leptos_axum::{generate_route_list, LeptosRoutes};
@@ -53,8 +54,12 @@ async fn main() {
 
         // Uploads may be large (videos) — raise the default 2MB cap.
         .layer(DefaultBodyLimit::max(512 * 1024 * 1024))
-        // Interactive PPTX slide media assets & history simulator:
-        .nest_service("/slides-media", tower_http::services::ServeDir::new("public/slides"))
+        // Slide media (content/slides, NOT public/): login + course access
+        // are checked before any bytes are sent.
+        .route(
+            "/slides-media/{deck_id}/{*path}",
+            get(bookreader::classes::slides::media::serve_slide_media),
+        )
         // ...hand it the Leptos routes (pages + server functions)...
         .leptos_routes(&leptos_options, routes, {
             let leptos_options = leptos_options.clone();

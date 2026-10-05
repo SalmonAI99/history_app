@@ -7,7 +7,7 @@ for the Leptos web framework (Server-Side Rendering + WASM Hydration),
 instead of generating standalone static JS/HTML.
 
 Features:
-- Extracts embedded images and MP4 videos to public/slides/<deck_id>/media/
+- Extracts embedded images and MP4 videos to content/slides/<deck_id>/media/
 - Generates strongly typed, zero-allocation Rust static data in src/slides/<deck_id>.rs
 - Automatically updates src/slides/mod.rs deck registry and router
 - Enables native Leptos client-side SPA navigation via <A href="/slides/<deck_id>">
@@ -19,6 +19,7 @@ import sys
 import re
 import json
 import shutil
+import subprocess
 import zipfile
 import argparse
 import xml.etree.ElementTree as ET
@@ -38,7 +39,8 @@ NS = {
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 SLIDES_RS_DIR = PROJECT_ROOT / "src" / "slides"
-PUBLIC_SLIDES_DIR = PROJECT_ROOT / "public" / "slides"
+# Outside public/ on purpose: served only via the gated /slides-media route.
+PUBLIC_SLIDES_DIR = PROJECT_ROOT / "content" / "slides"
 
 
 def slugify(text: str) -> str:
@@ -50,6 +52,23 @@ def slugify(text: str) -> str:
     if not s or s[0].isdigit():
         s = "deck_" + s
     return s
+
+
+def make_video_thumbs(deck_dir: Path) -> None:
+    """Writes the first frame of each media/*.mp4 to thumbs/<stem>.jpg.
+
+    Thumbnails are shown to logged-in users who haven't unlocked the course
+    (see src/classes/slides/media.rs). Requires ffmpeg on PATH.
+    """
+    thumbs_dir = deck_dir / "thumbs"
+    thumbs_dir.mkdir(parents=True, exist_ok=True)
+    for video in sorted((deck_dir / "media").glob("*.mp4")):
+        target = thumbs_dir / f"{video.stem}.jpg"
+        subprocess.run(
+            ["ffmpeg", "-y", "-loglevel", "error", "-i", str(video),
+             "-frames:v", "1", "-vf", "scale=640:-2", "-q:v", "4", str(target)],
+            check=True,
+        )
 
 
 def extract_media(pptx_path: Path, media_dir: Path) -> dict:
@@ -777,6 +796,8 @@ def process_pptx(pptx_file: Path, deck_id: str = None) -> tuple[str, str, int]:
     print("  [1/3] Extracting media...")
     extract_media(pptx_file, media_dir)
 
+    make_video_thumbs(public_dir)
+
     print("  [2/3] Parsing slides...")
     slides = parse_presentation(pptx_file, media_dir)
     print(f"  Parsed {len(slides)} slides.")
@@ -821,7 +842,7 @@ def main():
     parser.add_argument("pptx", nargs="?", help="Path to input .pptx file")
     parser.add_argument("--deck-id", help="Custom identifier for the deck (used in URL /slides/<deck_id>)")
     parser.add_argument("--from-json", help="Path to an existing lecture.json file")
-    parser.add_argument("--all", action="store_true", help="Process all PPTX files in storage/ or regenerate from public/slides/")
+    parser.add_argument("--all", action="store_true", help="Process all PPTX files in storage/ or regenerate from content/slides/")
     args = parser.parse_args()
 
     if args.from_json:
@@ -839,7 +860,7 @@ def main():
             for p in pptx_files:
                 process_pptx(p)
         else:
-            # Fallback to existing public/slides/*/lecture.json
+            # Fallback to existing content/slides/*/lecture.json
             json_files = list(PUBLIC_SLIDES_DIR.glob("*/lecture.json"))
             print(f"No .pptx found; regenerating from {len(json_files)} existing lecture.json files:")
             for j in json_files:

@@ -1,6 +1,8 @@
 // Shared slide-deck catalog, models, access checks, and Leptos viewer components.
 
 pub mod access;
+#[cfg(feature = "ssr")]
+pub mod media;
 pub mod model;
 
 pub use access::*;

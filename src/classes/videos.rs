@@ -24,6 +24,19 @@ impl CourseVideo {
             .unwrap_or_default()
     }
 
+    /// First-frame thumbnail (`thumbs/<stem>.jpg`, made by the pipeline);
+    /// viewable without unlocking the course.
+    fn thumb(self) -> String {
+        let stem = self
+            .media
+            .src
+            .rsplit('/')
+            .next()
+            .and_then(|name| name.rsplit_once('.').map(|(stem, _)| stem))
+            .unwrap_or(self.media.src);
+        format!("/slides-media/{}/thumbs/{}.jpg", self.deck_id, stem)
+    }
+
     fn title(self) -> String {
         match self.media.caption {
             Some(caption)
@@ -61,10 +74,16 @@ pub fn collect_course_videos(deck_ids: &[&str]) -> Vec<CourseVideo> {
 }
 
 #[component]
-pub fn CourseVideoLibrary(videos: Vec<CourseVideo>) -> impl IntoView {
+pub fn CourseVideoLibrary(
+    videos: Vec<CourseVideo>,
+    /// Whether this account may watch the course; locked shows thumbnails only.
+    #[prop(into)]
+    unlocked: Signal<bool>,
+) -> impl IntoView {
     let selected = RwSignal::new(0usize);
     let player_videos = videos.clone();
     let poster_videos = videos.clone();
+    let thumb_videos = videos.clone();
     let title_videos = videos.clone();
     let context_videos = videos.clone();
 
@@ -75,15 +94,38 @@ pub fn CourseVideoLibrary(videos: Vec<CourseVideo>) -> impl IntoView {
             } else {
                 view! {
                     <div class="course-video-player">
-                        <video
-                            controls
-                            playsinline
-                            preload="metadata"
-                            src=move || player_videos.get(selected.get()).map(|video| video.src()).unwrap_or_default()
-                            poster=move || poster_videos.get(selected.get()).map(|video| video.poster()).unwrap_or_default()
-                        >
-                            "Your browser does not support HTML video."
-                        </video>
+                        {move || {
+                            let player_videos = player_videos.clone();
+                            let poster_videos = poster_videos.clone();
+                            if unlocked.get() {
+                                view! {
+                                    <video
+                                        controls
+                                        playsinline
+                                        preload="metadata"
+                                        src=move || player_videos.get(selected.get()).map(|video| video.src()).unwrap_or_default()
+                                        poster=move || poster_videos.get(selected.get()).map(|video| video.poster()).unwrap_or_default()
+                                    >
+                                        "Your browser does not support HTML video."
+                                    </video>
+                                }.into_any()
+                            } else {
+                                let thumb_videos = thumb_videos.clone();
+                                view! {
+                                    <div class="course-video-locked">
+                                        <img
+                                            src=move || thumb_videos.get(selected.get()).map(|video| video.thumb()).unwrap_or_default()
+                                            alt=""
+                                        />
+                                        <div class="course-video-locked-overlay">
+                                            <span class="course-video-locked-icon" aria-hidden="true">"🔒"</span>
+                                            <strong>"Unlock this course to watch"</strong>
+                                            <a href="#course-lessons">"See purchase options"</a>
+                                        </div>
+                                    </div>
+                                }.into_any()
+                            }
+                        }}
                     </div>
                     <div class="course-video-now-playing" aria-live="polite">
                         <span>"NOW PLAYING"</span>
@@ -96,7 +138,7 @@ pub fn CourseVideoLibrary(videos: Vec<CourseVideo>) -> impl IntoView {
             <div class="course-video-playlist" role="group" aria-label="Course video playlist">
                 {videos.iter().enumerate().map(|(index, video)| {
                     let title = video.title();
-                    let poster = video.poster();
+                    let thumb = video.thumb();
                     let deck_title = video.deck_title;
                     let slide_number = video.slide_number;
                     view! {
@@ -107,12 +149,14 @@ pub fn CourseVideoLibrary(videos: Vec<CourseVideo>) -> impl IntoView {
                             aria-pressed=move || selected.get() == index
                             on:click=move |_| selected.set(index)
                         >
-                            <img src=poster alt="" loading="lazy"/>
+                            <img src=thumb alt="" loading="lazy"/>
                             <span class="course-video-item-copy">
                                 <strong>{title}</strong>
                                 <small>{format!("{} · Slide {}", deck_title, slide_number)}</small>
                             </span>
-                            <span class="course-video-play-icon" aria-hidden="true">"▶"</span>
+                            <span class="course-video-play-icon" aria-hidden="true">
+                                {move || if unlocked.get() { "▶" } else { "🔒" }}
+                            </span>
                         </button>
                     }
                 }).collect_view()}

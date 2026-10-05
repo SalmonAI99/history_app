@@ -7,7 +7,7 @@ use leptos_router::{
     components::A,
     hooks::{use_params_map, use_query_map},
 };
-use crate::classes::slides::{SlideDeckViewer, ALL_DECKS};
+use crate::classes::slides::{get_unlocked_courses, SlideDeckViewer, ALL_DECKS};
 use crate::classes::videos::{collect_course_videos, CourseVideoLibrary};
 use crate::classes::{ALL_COURSES, get_class_comments, CourseMindMap, course_thumbnail, AddClassComment};
 use leptos_meta::Title;
@@ -610,19 +610,32 @@ pub fn ClassDetailPage() -> impl IntoView {
     let add_comment = ServerAction::<AddClassComment>::new();
     let comments = Resource::new(move || (class_id(), add_comment.version().get(), user.get()), move |(id, _, u)| async move { if let Some(Some(_)) = u { get_class_comments(id).await } else { Ok(vec![]) } });
 
+    // Deck IDs this account may watch (admin, subscription, or an enrolled learner).
+    let unlocked_decks = Resource::new(
+        move || user.get().flatten().map(|u| u.id),
+        |_| async { get_unlocked_courses().await.unwrap_or_default() },
+    );
+
     let active_deck = move || query_map.read().get("deck");
     let active_learner_id = move || query_map.read().get("learner").and_then(|id| id.parse::<i64>().ok());
 
     view! {
 <Suspense fallback=|| view! { <p>"Loading class…"</p> }>
 
-            {move || match user.get() {
-                None => ().into_any(),
-                Some(None) => view! { <p>"Please " <A href="/login">"log in"</A> " to view this class."</p> }.into_any(),
-                Some(Some(_)) => match ALL_COURSES.iter().find(|c| c.id == class_id()) {
+            // Suspend + .await (not .get()): with .get() the server sometimes
+            // never closed this Suspense and the page stuck on "loading".
+            {move || Suspend::new(async move {
+                let user = user.await;
+                let unlocked_list = unlocked_decks.await;
+                match user {
+                None => view! { <p>"Please " <A href="/login">"log in"</A> " to view this class."</p> }.into_any(),
+                Some(_) => match ALL_COURSES.iter().find(|c| c.id == class_id()) {
                     None => view! { <p>"Class not found."</p> <A href="/classes">"← All classes"</A> }.into_any(),
                     Some(class) => {
                         let course_videos = collect_course_videos(class.slide_decks);
+                        let videos_unlocked = Signal::stored(
+                            unlocked_list.iter().any(|id| class.slide_decks.contains(&id.as_str())),
+                        );
                         let video_count = course_videos.len();
                         let slide_count: usize = ALL_DECKS
                             .iter()
@@ -689,7 +702,7 @@ pub fn ClassDetailPage() -> impl IntoView {
                                                 <span class="course-section-count">{format!("{video_count} clips")}</span>
                                             </div>
                                             <p class="course-section-description">{class.video_intro}</p>
-                                            <CourseVideoLibrary videos=course_videos.clone()/>
+                                            <CourseVideoLibrary videos=course_videos.clone() unlocked=videos_unlocked/>
                                         </section>
 
                                         <section id="course-roadmap" class="course-roadmap-section">
@@ -794,7 +807,7 @@ pub fn ClassDetailPage() -> impl IntoView {
                         }} </div>
                     }.into_any()
                 },
-            }}}
+            }}})}
 </Suspense>
     }
 }
