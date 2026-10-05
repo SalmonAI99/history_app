@@ -83,32 +83,6 @@ pub async fn init() -> Result<(), sqlx::Error> {
     .await?;
 
     sqlx::query(
-        "CREATE TABLE IF NOT EXISTS progress (           -- Stage 9
-            user_id INTEGER NOT NULL REFERENCES users(id),
-            book_id INTEGER NOT NULL REFERENCES books(id),
-            chapter INTEGER NOT NULL,
-            PRIMARY KEY (user_id, book_id)
-        )",
-    )
-    .execute(&mut conn)
-    .await?;
-
-    sqlx::query(
-        "CREATE TABLE IF NOT EXISTS documents (          -- Stage 9
-            id         INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id    INTEGER NOT NULL REFERENCES users(id),
-            kind       TEXT NOT NULL DEFAULT 'writing',  -- 'writing' or 'note'
-            title      TEXT NOT NULL DEFAULT '',
-            content    TEXT NOT NULL,
-            book_id    INTEGER REFERENCES books(id),      -- notes only
-            chapter    INTEGER,                           -- notes only
-            created_at TEXT NOT NULL DEFAULT (datetime('now'))
-        )",
-    )
-    .execute(&mut conn)
-    .await?;
-
-    sqlx::query(
         "CREATE TABLE IF NOT EXISTS files (              -- Stage 10
             id            INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id       INTEGER NOT NULL REFERENCES users(id),
@@ -152,11 +126,29 @@ pub async fn init() -> Result<(), sqlx::Error> {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             title TEXT NOT NULL,
             notes TEXT NOT NULL DEFAULT '',
+            syllabus TEXT NOT NULL DEFAULT '',
+            content TEXT NOT NULL DEFAULT '',
+            videos TEXT NOT NULL DEFAULT '',
             created_at TEXT NOT NULL DEFAULT (datetime('now'))
         )",
     )
     .execute(&mut conn)
     .await?;
+
+    for col in ["syllabus", "content", "videos"] {
+        let (has,): (i64,) = sqlx::query_as(&format!(
+            "SELECT COUNT(*) FROM pragma_table_info('classes') WHERE name = '{col}'"
+        ))
+        .fetch_one(&mut conn)
+        .await?;
+        if has == 0 {
+            sqlx::query(&format!(
+                "ALTER TABLE classes ADD COLUMN {col} TEXT NOT NULL DEFAULT ''"
+            ))
+            .execute(&mut conn)
+            .await?;
+        }
+    }
 
     sqlx::query(
         "CREATE TABLE IF NOT EXISTS class_comments (
@@ -181,38 +173,6 @@ pub async fn init() -> Result<(), sqlx::Error> {
     )
     .execute(&mut conn)
     .await?;
-
-    sqlx::query(
-        "CREATE TABLE IF NOT EXISTS world_users (        -- Book World
-            user_id    INTEGER PRIMARY KEY REFERENCES users(id),
-            username   TEXT NOT NULL,
-            book_id    INTEGER NOT NULL DEFAULT 0,   -- shelf you're at (0 = none)
-            x          INTEGER NOT NULL DEFAULT 3,       -- grid position
-            y          INTEGER NOT NULL DEFAULT 3,
-            message    TEXT NOT NULL DEFAULT '',         -- latest chat line
-            updated_at TEXT NOT NULL DEFAULT (datetime('now'))
-        )",
-    )
-    .execute(&mut conn)
-    .await?;
-
-    // world_users grew grid coordinates AFTER its first version. SQLite
-    // has no "ADD COLUMN IF NOT EXISTS", so check pragma first and only
-    // alter what's missing (this is what a "migration" means, gently).
-    for col in ["x", "y"] {
-        let (has,): (i64,) = sqlx::query_as(&format!(
-            "SELECT COUNT(*) FROM pragma_table_info('world_users') WHERE name = '{col}'"
-        ))
-        .fetch_one(&mut conn)
-        .await?;
-        if has == 0 {
-            sqlx::query(&format!(
-                "ALTER TABLE world_users ADD COLUMN {col} INTEGER NOT NULL DEFAULT 3"
-            ))
-            .execute(&mut conn)
-            .await?;
-        }
-    }
 
     // First run only: fill the database from books/book.txt.
     let (count,): (i64,) = sqlx::query_as("SELECT COUNT(*) FROM books")

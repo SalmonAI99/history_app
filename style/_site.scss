@@ -1,0 +1,16 @@
+// ---------- Stage 8: the public site ----------
+
+header {
+    flex-wrap: wrap;
+}
+
+.site-nav {
+    display: flex;
+    gap: 16px;
+    font-size: 16px;
+}
+
+.site-nav a:hover {
+    text-decoration: underline;
+}
+

@@ -123,7 +123,7 @@ pub async fn get_unlocked_courses() -> Result<Vec<String>, ServerFnError> {
 /// Allows a logged-in user to purchase/unlock access to a course.
 #[server]
 pub async fn buy_course_access(deck_id: String) -> Result<(), ServerFnError> {
-    let user = crate::workspace::ssr::require_user().await?;
+    let user = crate::auth::ssr::require_user().await?;
     let deck_id = deck_id.trim();
     if deck_id.is_empty() {
         return Err(ServerFnError::ServerError("Invalid deck id.".into()));

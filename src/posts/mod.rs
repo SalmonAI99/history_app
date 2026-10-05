@@ -9,6 +9,7 @@ pub struct Post {
     pub title: &'static str,
     pub kind: &'static str,
     pub published_at: &'static str,
+    pub search_text: &'static str,
     pub render: fn() -> AnyView,
 }
 
@@ -18,6 +19,7 @@ pub const ALL_POSTS: &[Post] = &[
         title: "Welcome to Book Reader",
         kind: "blog",
         published_at: "2026-10-01",
+        search_text: "Leptos book reader reading platform interactive 3D voxel scene ancient Greek temple welcome new site real time rendering",
         render: welcome_post,
     },
     Post {
@@ -25,6 +27,7 @@ pub const ALL_POSTS: &[Post] = &[
         title: "Autumn Courses Registration",
         kind: "news",
         published_at: "2026-10-02",
+        search_text: "registration autumn reading courses enrollment children course schedule interactive zone Leptos component",
         render: autumn_post,
     },
 ];
@@ -45,4 +48,3 @@ pub fn get_recent_posts() -> Vec<&'static Post> {
 pub fn get_post(slug: &str) -> Option<&'static Post> {
     ALL_POSTS.iter().find(|p| p.slug == slug)
 }
-

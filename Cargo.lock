@@ -242,9 +242,7 @@ dependencies = [
  "axum",
  "bcrypt",
  "console_error_panic_hook",
- "futures",
  "http",
- "js-sys",
  "leptos",
  "leptos_axum",
  "leptos_meta",
@@ -258,9 +256,7 @@ dependencies = [
  "tower-http",
  "tracing",
  "tracing-subscriber",
- "uuid",
  "wasm-bindgen",
- "web-sys",
 ]
 
 [[package]]

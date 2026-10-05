@@ -1,12 +1,13 @@
 use leptos::prelude::*;
+use leptos_router::components::A;
 
-use super::course::CourseWeek;
+use super::CourseWeek;
 
 #[component]
 pub fn CourseMindMap(
+    course_id: i64,
     course_title: &'static str,
     weeks: &'static [CourseWeek],
-    active_deck: RwSignal<Option<String>>,
 ) -> impl IntoView {
     let selected_week = RwSignal::new(0usize);
 
@@ -53,13 +54,12 @@ pub fn CourseMindMap(
                             <ul>
                                 {week.topics.iter().map(|topic| view! { <li>{*topic}</li> }).collect_view()}
                             </ul>
-                            <button
-                                type="button"
-                                class="mindmap-open-slides"
-                                on:click=move |_| active_deck.set(Some(deck_id.clone()))
+                            <A
+                                href=format!("/classes/{course_id}?deck={deck_id}")
+                                attr:class="mindmap-open-slides"
                             >
                                 "Explore related slides →"
-                            </button>
+                            </A>
                         </div>
                     }
                 })}

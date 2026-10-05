@@ -10,11 +10,8 @@ pub mod book;
 pub mod classes;
 pub mod files;
 pub mod posts;
+pub mod search;
 pub mod site;
-pub mod slides;
-pub mod workspace;
-pub mod world;
-pub mod simulator;
 
 // The database layer only exists in the server build —
 // the browser must never touch the database directly.

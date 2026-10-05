@@ -1,0 +1,538 @@
+// ---------- Interactive Course Introduction ----------
+
+.course-page {
+    background: #f4f1e8;
+    color: #1f2933;
+    min-height: 100vh;
+}
+
+.course-hero {
+    background:
+        radial-gradient(circle at 82% 18%, rgba(180, 132, 73, 0.28), transparent 28rem),
+        linear-gradient(125deg, #172a35 0%, #10202a 52%, #342a21 100%);
+    color: #fffaf0;
+    padding: clamp(56px, 8vw, 100px) 24px 68px;
+}
+
+.course-hero-inner,
+.course-content-grid {
+    max-width: 1080px;
+}
+
+.course-back-link {
+    color: #dfc79f;
+}
+
+.course-title {
+    max-width: 780px;
+    font-size: clamp(2.5rem, 7vw, 5rem);
+    letter-spacing: -0.045em;
+}
+
+.course-notes {
+    color: #e3e0d8;
+    max-width: 760px;
+}
+
+.course-instructor-avatar {
+    background: rgba(245, 221, 177, 0.16);
+    border: 1px solid rgba(245, 221, 177, 0.3);
+}
+
+.course-section-nav {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 12px 16px;
+    background: rgba(253, 251, 247, 0.94);
+    border-bottom: 1px solid #e5ddce;
+    backdrop-filter: blur(12px);
+}
+
+.course-section-nav a {
+    flex: 0 0 auto;
+    padding: 8px 14px;
+    border: 1px solid #e4dccd;
+    border-radius: 999px;
+    color: #48545a;
+    font-size: 0.9rem;
+    text-decoration: none;
+    transition: background 150ms ease, color 150ms ease, border-color 150ms ease;
+}
+
+.course-section-nav a:hover,
+.course-section-nav a:focus-visible {
+    background: #263d47;
+    border-color: #263d47;
+    color: #fffaf0;
+}
+
+.course-content-grid {
+    gap: 34px;
+    padding-top: 42px;
+    padding-bottom: 72px;
+}
+
+.course-content-grid > section {
+    scroll-margin-top: 78px;
+    padding: clamp(20px, 3vw, 32px);
+    border: 1px solid #e5ddce;
+    border-radius: 20px;
+    background: #fffdf8;
+    box-shadow: 0 12px 30px rgba(42, 37, 28, 0.055);
+}
+
+.course-section-heading {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 22px;
+}
+
+.course-eyebrow {
+    margin: 0 0 8px;
+    color: #927044;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.13em;
+}
+
+.course-section-title {
+    margin: 0;
+    font-size: clamp(1.55rem, 3vw, 2.1rem);
+    letter-spacing: -0.025em;
+    color: #1d2b32;
+}
+
+.course-section-count {
+    flex: 0 0 auto;
+    padding: 7px 11px;
+    border-radius: 999px;
+    background: #f2eadb;
+    color: #68583e;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.course-section-description {
+    margin: -7px 0 20px;
+    color: #758087;
+    font-size: 0.92rem;
+    line-height: 1.55;
+}
+
+.course-video-library {
+    display: grid;
+    gap: 18px;
+}
+
+.course-video-player {
+    overflow: hidden;
+    border: 1px solid #1a2328;
+    border-radius: 16px;
+    background: #101820;
+    box-shadow: 0 16px 30px rgba(17, 24, 29, 0.16);
+}
+
+.course-video-player video {
+    display: block;
+    width: 100%;
+    max-height: min(62vw, 610px);
+    aspect-ratio: 16 / 9;
+    background: #101820;
+    object-fit: contain;
+}
+
+.course-video-now-playing {
+    display: grid;
+    gap: 4px;
+}
+
+.course-video-now-playing > span,
+.mindmap-detail-kicker {
+    margin: 0;
+    color: #927044;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+}
+
+.course-video-now-playing h3,
+.course-video-now-playing p {
+    margin: 0;
+}
+
+.course-video-now-playing h3 {
+    color: #24343b;
+    font-size: 1.2rem;
+}
+
+.course-video-now-playing p {
+    color: #758087;
+    font-size: 0.88rem;
+}
+
+.course-video-playlist {
+    display: grid;
+    grid-auto-columns: minmax(250px, 320px);
+    grid-auto-flow: column;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 2px 2px 10px;
+    scroll-snap-type: x proximity;
+}
+
+.course-video-item {
+    display: grid;
+    grid-template-columns: 92px minmax(0, 1fr) 26px;
+    align-items: center;
+    gap: 11px;
+    min-width: 0;
+    padding: 9px;
+    border: 1px solid #e8e1d5;
+    border-radius: 12px;
+    background: #fff;
+    color: #26363d;
+    text-align: left;
+    cursor: pointer;
+    scroll-snap-align: start;
+    transition: border-color 150ms ease, background 150ms ease, transform 150ms ease;
+}
+
+.course-video-item:hover {
+    transform: translateY(-2px);
+    border-color: #b28b53;
+}
+
+.course-video-item.active {
+    border-color: #936d39;
+    background: #f7f1e6;
+    box-shadow: inset 0 0 0 1px #936d39;
+}
+
+.course-video-item img {
+    width: 92px;
+    height: 60px;
+    border-radius: 8px;
+    background: #d8d4cb;
+    object-fit: cover;
+}
+
+.course-video-item-copy {
+    display: grid;
+    gap: 5px;
+    min-width: 0;
+}
+
+.course-video-item-copy strong,
+.course-video-item-copy small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.course-video-item-copy strong {
+    font-size: 0.88rem;
+}
+
+.course-video-item-copy small {
+    color: #7b8589;
+    font-size: 0.72rem;
+}
+
+.course-video-play-icon {
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #263d47;
+    color: white;
+    font-size: 0.65rem;
+}
+
+.course-video-empty {
+    margin: 0;
+    color: #69777b;
+}
+
+.mindmap-scroll {
+    overflow-x: auto;
+    border: 1px solid #e8e0d1;
+    border-radius: 16px;
+    background:
+        radial-gradient(circle at 50% 50%, rgba(197, 166, 119, 0.14), transparent 18rem),
+        linear-gradient(135deg, #fbf8f0, #f4efe4);
+    scrollbar-color: #c3ae8b transparent;
+}
+
+.mindmap-canvas {
+    position: relative;
+    width: 100%;
+    min-width: 720px;
+    height: 360px;
+}
+
+.mindmap-branches {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+.mindmap-branches path {
+    fill: none;
+    stroke: #c3ae8b;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-dasharray: 5 7;
+}
+
+.mindmap-root,
+.mindmap-branch {
+    position: absolute;
+    z-index: 1;
+    display: grid;
+    justify-items: start;
+    gap: 7px;
+    width: 194px;
+    padding: 15px 17px;
+    border-radius: 15px;
+    text-align: left;
+}
+
+.mindmap-root {
+    top: 50%;
+    left: 50%;
+    justify-items: center;
+    width: 214px;
+    padding: 19px;
+    border: 1px solid #3d5962;
+    background: #243d46;
+    color: #fffaf0;
+    text-align: center;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 10px 24px rgba(32, 55, 64, 0.2);
+}
+
+.mindmap-root span,
+.mindmap-branch span {
+    color: #ad9366;
+    font-size: 0.66rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+}
+
+.mindmap-root strong {
+    font-size: 1rem;
+}
+
+.mindmap-branch {
+    border: 1px solid #d9ceb9;
+    background: #fffdf8;
+    color: #344249;
+    cursor: pointer;
+    box-shadow: 0 5px 15px rgba(52, 48, 38, 0.07);
+    transition: transform 150ms ease, border-color 150ms ease, background 150ms ease;
+}
+
+.mindmap-branch strong {
+    font-size: 0.93rem;
+}
+
+.mindmap-branch:hover,
+.mindmap-branch.active {
+    border-color: #987348;
+    background: #f3ead9;
+    transform: translateY(-3px);
+}
+
+.mindmap-branch-0 {
+    top: 7%;
+    left: 4%;
+}
+
+.mindmap-branch-1 {
+    top: 7%;
+    right: 4%;
+}
+
+.mindmap-branch-2 {
+    bottom: 5%;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.mindmap-branch-2:hover,
+.mindmap-branch-2.active {
+    transform: translate(-50%, -3px);
+}
+
+.mindmap-detail {
+    margin-top: 14px;
+    padding: 22px 24px;
+    border: 1px solid #e8e0d1;
+    border-radius: 15px;
+    background: #fff;
+}
+
+.mindmap-detail h3,
+.mindmap-detail p {
+    margin: 8px 0 0;
+}
+
+.mindmap-detail h3 {
+    color: #24343b;
+    font-size: 1.3rem;
+}
+
+.mindmap-detail > div > p:not(.mindmap-detail-kicker) {
+    color: #667277;
+    line-height: 1.55;
+}
+
+.mindmap-detail ul {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin: 18px 0;
+    padding: 0;
+    list-style: none;
+}
+
+.mindmap-detail li {
+    padding: 11px 13px;
+    border-radius: 10px;
+    background: #f6f2e9;
+    color: #46545a;
+    font-size: 0.88rem;
+    line-height: 1.4;
+}
+
+.mindmap-open-slides {
+    display: inline-flex;
+    align-items: center;
+    padding: 10px 15px;
+    border: 0;
+    border-radius: 9px;
+    background: #263d47;
+    color: #fffaf0;
+    font: inherit;
+    font-size: 0.88rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 150ms ease;
+    text-decoration: none;
+}
+
+.mindmap-open-slides:hover {
+    background: #365762;
+}
+
+.course-overview-details {
+    border: 1px solid #e7dfd1;
+    border-radius: 13px;
+    background: #fff;
+    color: #536066;
+}
+
+.course-overview-details summary {
+    padding: 17px 19px;
+    color: #344249;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.course-overview-details p {
+    margin: 0;
+    padding: 0 19px 19px;
+    line-height: 1.7;
+}
+
+.curriculum-card {
+    border-color: #e8e0d1;
+    border-radius: 14px;
+    box-shadow: none;
+}
+
+.curriculum-button,
+.discussion-submit {
+    background: #263d47;
+}
+
+.curriculum-button:hover,
+.discussion-submit:hover {
+    background: #365762;
+}
+
+.course-discussion-section {
+    border-top: 0;
+    padding-top: 32px;
+}
+
+.course-discussion-card {
+    border-color: #e8e0d1;
+    border-radius: 14px;
+}
+
+.course-video-item:focus-visible,
+.mindmap-branch:focus-visible,
+.mindmap-open-slides:focus-visible,
+.curriculum-button:focus-visible,
+.course-section-nav a:focus-visible {
+    outline: 3px solid #bd8e4e;
+    outline-offset: 3px;
+}
+
+@media (max-width: 680px) {
+    .course-hero {
+        padding: 52px 18px 48px;
+    }
+
+    .course-title {
+        font-size: clamp(2.4rem, 12vw, 3.5rem);
+    }
+
+    .course-content-grid {
+        gap: 22px;
+        padding: 24px 12px 48px;
+    }
+
+    .course-content-grid > section {
+        padding: 19px 16px;
+        border-radius: 15px;
+    }
+
+    .course-section-heading {
+        align-items: start;
+    }
+
+    .course-section-count {
+        font-size: 0.7rem;
+    }
+
+    .course-video-player video {
+        max-height: none;
+    }
+
+    .course-video-playlist {
+        grid-auto-columns: minmax(225px, 82vw);
+    }
+
+    .mindmap-detail ul {
+        grid-template-columns: 1fr;
+    }
+
+    .curriculum-card {
+        align-items: start;
+        flex-direction: column;
+        gap: 16px;
+        padding: 18px;
+    }
+}

@@ -15,8 +15,6 @@ async fn main() {
     use tower_http::trace::TraceLayer;
     use tracing::info;
     use bookreader::app::*;
-use bookreader::simulator::server::{ws_handler, GameState};
-use std::sync::Arc;
 
     // ----- TELEMETRY: structured logging -----
     // One line per event, with timestamps and key=value fields —
@@ -47,15 +45,11 @@ use std::sync::Arc;
     let addr = conf.leptos_options.site_addr;
     let leptos_options = conf.leptos_options;
 
-    // Game state for simulator
-    let game_state = Arc::new(GameState::new());
-
     // Ask the App component which URLs it can render.
     let routes = generate_route_list(App);
 
     // Build the Axum web server:
     let app = Router::new()
-        .route("/ws/simulator", get(ws_handler))
         // Stage 10: the gated byte routes. Session is checked
         // inside these handlers BEFORE any disk is touched.
         .route("/files", get(bookreader::files::ssr::serve_file))
@@ -75,7 +69,6 @@ use std::sync::Arc;
         .fallback(leptos_axum::file_and_error_handler(shell))
         // ...and log EVERY request: method, path, status, latency.
         .layer(TraceLayer::new_for_http())
-        .layer(axum::Extension(game_state))
         .with_state(leptos_options);
 
     info!("listening on http://{}", &addr);

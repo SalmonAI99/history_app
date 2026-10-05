@@ -121,7 +121,7 @@ pub async fn list_slide_decks() -> Result<Vec<SlideDeckMeta>, ServerFnError> {
 /// gated again inside the /files route itself.
 #[server]
 pub async fn list_files() -> Result<Vec<FileMeta>, ServerFnError> {
-    crate::workspace::ssr::require_user().await?;
+    crate::auth::ssr::require_user().await?;
     let mut conn = crate::db::db().await?;
     let files = sqlx::query_as::<_, FileMeta>(
         "SELECT id, original_name, mime_type, size_bytes, created_at
@@ -135,7 +135,7 @@ pub async fn list_files() -> Result<Vec<FileMeta>, ServerFnError> {
 /// Delete a file: its database row AND its bytes on disk. Admin only.
 #[server]
 pub async fn delete_file(id: i64) -> Result<(), ServerFnError> {
-    let user = crate::workspace::ssr::require_user().await?;
+    let user = crate::auth::ssr::require_user().await?;
     if user.role != "admin" {
         return Err(ServerFnError::ServerError("Admins only.".into()));
     }
@@ -166,233 +166,234 @@ pub async fn delete_file(id: i64) -> Result<(), ServerFnError> {
     Ok(())
 }
 
-// ----------------------------------------------------------
-//  SHARED VIEW PIECES
-// ----------------------------------------------------------
-
-/// The admin upload form. It is a PLAIN HTML <form>, not a server-fn
-/// form: browsers send files as "multipart/form-data", which our
-/// plain POST /upload route (the ssr module below) is built to read.
-fn upload_form(back: &'static str) -> impl IntoView {
-    let accept = if back == "/member" { "video/*" } else { "*/*" };
-    view! {
-        <form method="post" action="/upload" enctype="multipart/form-data" class="upload-form">
-            <input type="hidden" name="back" value=back/>
-            <input type="file" name="file" required accept=accept/>
-            <button type="submit">"Upload"</button>
-        </form>
-    }
-}
-
-/// One row in a file list: name, size, a player for videos, a delete
-/// button for admins. Nothing more.
-fn file_row(f: &FileMeta, is_admin: bool, delete: ServerAction<DeleteFile>) -> impl IntoView {
-    let id = f.id;
-    let href = f.href();
-    let name = f.original_name.clone();
-    let size = f.size_label();
-
-    view! {
-        <li class="doc-item">
-            <div class="doc-heading">
-                <a href=href download>{name}</a>
-                <small>{size}</small>
-            </div>
-            {if f.is_video() {
-                let src = format!("/files?id={}", f.id);
-                view! { <video controls src=src preload="metadata"></video> }.into_any()
-            } else {
-                ().into_any()
-            }}
-            {if is_admin {
-                view! {
-                    <ActionForm action=delete>
-                        <input type="hidden" name="id" value=id/>
-                        <button type="submit">"Delete"</button>
-                    </ActionForm>
-                }.into_any()
-            } else {
-                ().into_any()
-            }}
-        </li>
-    }
-}
-
-// ----------------------------------------------------------
-//  PAGES
-// ----------------------------------------------------------
-
-/// Shared by /materials and /member: lists the files of one kind.
-#[component]
-fn FilesView(videos_only: bool) -> impl IntoView {
-    let user = expect_context::<Resource<Option<User>>>();
-    let files = Resource::new(move || user.get(), move |u| async move { if let Some(Some(_)) = u { list_files().await } else { Ok(vec![]) } });
-    let delete = ServerAction::<DeleteFile>::new();
-    let back = if videos_only { "/member" } else { "/materials" };
-
-    // After a delete, refresh the list.
-    Effect::new(move |_| {
-        if matches!(delete.value().get(), Some(Ok(()))) {
-            files.refetch();
-        }
-    });
-
-    let heading = if videos_only { "Video lessons" } else { "Materials" };
-    let blurb = if videos_only {
-        "Watch the lesson, then read the matching chapter."
-    } else {
-        "Course texts, worksheets and handouts — free for every student."
-    };
-    let login_hint = if videos_only {
-        " to watch the lessons."
-    } else {
-        " to download course materials."
-    };
-    let empty_hint = if videos_only {
-        "No video lessons yet — check back soon."
-    } else {
-        "No materials yet — check back soon."
-    };
-
-    view! {
-        <h2>{heading}</h2>
-        <p class="note-hint">{blurb}</p>
-        // The Transition boundary matters twice: it shows "Loading…"
-        // AND it guarantees server and client agree on the user state
-        // before comparing HTML (otherwise: hydration mismatch).
-        <Transition fallback=move || view! { <p class="loading">"Loading..."</p> }>
-            {move || match user.get() {
-                None => ().into_any(),
-                Some(None) => view! {
-                    <p class="note-hint">
-                        <span>"Please "</span>
-                        <A href="/login">"log in"</A>
-                        <span>{login_hint}</span>
-                    </p>
-                }.into_any(),
-                Some(Some(u)) => {
-                    let is_admin = u.role == "admin";
-                    view! {
-                        {is_admin.then(|| upload_form(back))}
-                        {move || match files.get() {
-                            None => ().into_any(),
-                            Some(Err(_)) => view! {
-                                <p>"Could not load the file list."</p>
-                            }.into_any(),
-                            Some(Ok(files)) => {
-                                let rows: Vec<FileMeta> = files
-                                    .into_iter()
-                                    .filter(|f| f.is_video() == videos_only)
-                                    .collect();
-                                if rows.is_empty() {
-                                    view! { <p class="note-hint">{empty_hint}</p> }.into_any()
-                                } else {
-                                    view! {
-                                        <ul class="doc-list">
-                                            {rows
-                                                .into_iter()
-                                                .map(|f| file_row(&f, is_admin, delete))
-                                                .collect_view()}
-                                        </ul>
-                                    }.into_any()
-                                }
-                            }
-                        }}
-                    }.into_any()
-                }
-            }}
-        </Transition>
-    }
-}
-
-/// /materials — texts, worksheets, PDFs (anything that isn't a video),
-/// plus interactive slide lecture notes.
-#[component]
-pub fn MaterialsPage() -> impl IntoView {
-    let slides = Resource::new(move || user.get(), move |u| async move { if let Some(Some(_)) = u { list_slide_decks().await } else { Ok(vec![]) } });
-
-    view! {
-        <div class="materials-page">
-            <section class="slides-section" style="margin-bottom: 2.5rem;">
-                <h2>"📖 课程讲义速读 (Slide Lecture Notes)"</h2>
-                <p class="note-hint">
-                    "配套 PPT 讲义精炼速读版与多媒体内容，支持全文检索与分章节复习。"
-                </p>
-
-                <Transition fallback=move || view! { <p class="loading">"正在加载讲义列表..."</p> }>
-                    {move || match slides.get() {
-                        None => ().into_any(),
-                        Some(Err(_)) => view! {
-                            <p class="note-hint">"无法加载讲义列表，请刷新重试。"</p>
-                        }.into_any(),
-                        Some(Ok(decks)) => {
-                            if decks.is_empty() {
-                                view! { <p class="note-hint">"暂无已生成的讲义速读。"</p> }.into_any()
-                            } else {
-                                view! {
-                                    <ul class="doc-list">
-                                        {decks.into_iter().map(|deck| {
-                                            let count_text = format!("{} 页", deck.slide_count);
-                                            let deck_title = deck.title.clone();
-                                            let deck_dir_text = format!("目录: {}", deck.id);
-                                            let deck_url = deck.url.clone();
-                                            view! {
-                                                <li class="doc-item">
-                                                    <div class="doc-heading" style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
-                                                        <div>
-                                                            <div style="font-weight: 700; font-size: 1.15rem; color: #29251f; margin-bottom: 4px;">
-                                                                {deck_title}
-                                                            </div>
-                                                            <div style="font-size: 0.85rem; color: #7a6e60;">
-                                                                <small style="background: #eadecd; padding: 2px 6px; border-radius: 4px; margin-right: 6px; font-weight: 600;">{count_text}</small>
-                                                                <span>{deck_dir_text}</span>
-                                                            </div>
-                                                        </div>
-                                                        <div>
-                                                            <A href=deck_url attr:class="button">
-                                                                "打开讲义速读 →"
-                                                            </A>
-                                                        </div>
-                                                    </div>
-                                                </li>
-                                            }
-                                        }).collect_view()}
-                                    </ul>
-                                }.into_any()
-                            }
-                        }
-                    }}
-                </Transition>
-            </section>
-
-            <section class="simulator-callout" style="margin-bottom: 2.5rem; background: #fffdf7; border: 1px solid #ebd3b0; border-radius: 10px; padding: 18px; display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap;">
-                <div>
-                    <h3 style="margin: 0 0 6px 0; font-size: 1.1rem; color: #7c440a;">"🎮 历史情境模拟器"</h3>
-                    <p style="margin: 0; font-size: 0.92rem; color: #8d5b25;">
-                        "控制角色探索耶路撒冷、迦南、所罗门圣殿与现代西墙，通过历史 NPC 对话与剧情体验历史发展。"
-                    </p>
-                </div>
-                <A href="/simulator/index.html" attr:rel="external" attr:class="button" attr:style="background: #a05a2c;">
-                    "进入模拟器 ⚔️"
-                </A>
-            </section>
-
-            <hr style="border: none; border-top: 1px solid #e0d7c7; margin: 2rem 0;" />
-
-            <section class="files-section">
-                <FilesView videos_only=false />
-            </section>
-        </div>
-    }
-}
-
-/// /member — the video shelf.
-#[component]
-pub fn VideosPage() -> impl IntoView {
-    view! {
-        <FilesView videos_only=true />
-    }
-}
+// // ----------------------------------------------------------
+// //  SHARED VIEW PIECES
+// // ----------------------------------------------------------
+//
+// /// The admin upload form. It is a PLAIN HTML <form>, not a server-fn
+// /// form: browsers send files as "multipart/form-data", which our
+// /// plain POST /upload route (the ssr module below) is built to read.
+// fn upload_form(back: &'static str) -> impl IntoView {
+//     let accept = if back == "/member" { "video/*" } else { "*/*" };
+//     view! {
+//         <form method="post" action="/upload" enctype="multipart/form-data" class="upload-form">
+//             <input type="hidden" name="back" value=back/>
+//             <input type="file" name="file" required accept=accept/>
+//             <button type="submit">"Upload"</button>
+//         </form>
+//     }
+// }
+//
+// /// One row in a file list: name, size, a player for videos, a delete
+// /// button for admins. Nothing more.
+// fn file_row(f: &FileMeta, is_admin: bool, delete: ServerAction<DeleteFile>) -> impl IntoView {
+//     let id = f.id;
+//     let href = f.href();
+//     let name = f.original_name.clone();
+//     let size = f.size_label();
+//
+//     view! {
+//         <li class="doc-item">
+//             <div class="doc-heading">
+//                 <a href=href download>{name}</a>
+//                 <small>{size}</small>
+//             </div>
+//             {if f.is_video() {
+//                 let src = format!("/files?id={}", f.id);
+//                 view! { <video controls src=src preload="metadata"></video> }.into_any()
+//             } else {
+//                 ().into_any()
+//             }}
+//             {if is_admin {
+//                 view! {
+//                     <ActionForm action=delete>
+//                         <input type="hidden" name="id" value=id/>
+//                         <button type="submit">"Delete"</button>
+//                     </ActionForm>
+//                 }.into_any()
+//             } else {
+//                 ().into_any()
+//             }}
+//         </li>
+//     }
+// }
+//
+// // ----------------------------------------------------------
+// //  PAGES
+// // ----------------------------------------------------------
+//
+// /// Shared by /materials and /member: lists the files of one kind.
+// #[component]
+// fn FilesView(videos_only: bool) -> impl IntoView {
+//     let user = expect_context::<Resource<Option<User>>>();
+//     let files = Resource::new(move || user.get(), move |u| async move { if let Some(Some(_)) = u { list_files().await } else { Ok(vec![]) } });
+//     let delete = ServerAction::<DeleteFile>::new();
+//     let back = if videos_only { "/member" } else { "/materials" };
+//
+//     // After a delete, refresh the list.
+//     Effect::new(move |_| {
+//         if matches!(delete.value().get(), Some(Ok(()))) {
+//             files.refetch();
+//         }
+//     });
+//
+//     let heading = if videos_only { "Video lessons" } else { "Materials" };
+//     let blurb = if videos_only {
+//         "Watch the lesson, then read the matching chapter."
+//     } else {
+//         "Course texts, worksheets and handouts — free for every student."
+//     };
+//     let login_hint = if videos_only {
+//         " to watch the lessons."
+//     } else {
+//         " to download course materials."
+//     };
+//     let empty_hint = if videos_only {
+//         "No video lessons yet — check back soon."
+//     } else {
+//         "No materials yet — check back soon."
+//     };
+//
+//     view! {
+//         <h2>{heading}</h2>
+//         <p class="note-hint">{blurb}</p>
+//         // The Transition boundary matters twice: it shows "Loading…"
+//         // AND it guarantees server and client agree on the user state
+//         // before comparing HTML (otherwise: hydration mismatch).
+//         <Transition fallback=move || view! { <p class="loading">"Loading..."</p> }>
+//             {move || match user.get() {
+//                 None => ().into_any(),
+//                 Some(None) => view! {
+//                     <p class="note-hint">
+//                         <span>"Please "</span>
+//                         <A href="/login">"log in"</A>
+//                         <span>{login_hint}</span>
+//                     </p>
+//                 }.into_any(),
+//                 Some(Some(u)) => {
+//                     let is_admin = u.role == "admin";
+//                     view! {
+//                         {is_admin.then(|| upload_form(back))}
+//                         {move || match files.get() {
+//                             None => ().into_any(),
+//                             Some(Err(_)) => view! {
+//                                 <p>"Could not load the file list."</p>
+//                             }.into_any(),
+//                             Some(Ok(files)) => {
+//                                 let rows: Vec<FileMeta> = files
+//                                     .into_iter()
+//                                     .filter(|f| f.is_video() == videos_only)
+//                                     .collect();
+//                                 if rows.is_empty() {
+//                                     view! { <p class="note-hint">{empty_hint}</p> }.into_any()
+//                                 } else {
+//                                     view! {
+//                                         <ul class="doc-list">
+//                                             {rows
+//                                                 .into_iter()
+//                                                 .map(|f| file_row(&f, is_admin, delete))
+//                                                 .collect_view()}
+//                                         </ul>
+//                                     }.into_any()
+//                                 }
+//                             }
+//                         }}
+//                     }.into_any()
+//                 }
+//             }}
+//         </Transition>
+//     }
+// }
+//
+// /// /materials — texts, worksheets, PDFs (anything that isn't a video),
+// /// plus interactive slide lecture notes.
+// #[component]
+// pub fn MaterialsPage() -> impl IntoView {
+//     let user = expect_context::<Resource<Option<User>>>();
+//     let slides = Resource::new(move || user.get(), move |u| async move { if let Some(Some(_)) = u { list_slide_decks().await } else { Ok(vec![]) } });
+//
+//     view! {
+//         <div class="materials-page">
+//             <section class="slides-section" style="margin-bottom: 2.5rem;">
+//                 <h2>"📖 课程讲义速读 (Slide Lecture Notes)"</h2>
+//                 <p class="note-hint">
+//                     "配套 PPT 讲义精炼速读版与多媒体内容，支持全文检索与分章节复习。"
+//                 </p>
+//
+//                 <Transition fallback=move || view! { <p class="loading">"正在加载讲义列表..."</p> }>
+//                     {move || match slides.get() {
+//                         None => ().into_any(),
+//                         Some(Err(_)) => view! {
+//                             <p class="note-hint">"无法加载讲义列表，请刷新重试。"</p>
+//                         }.into_any(),
+//                         Some(Ok(decks)) => {
+//                             if decks.is_empty() {
+//                                 view! { <p class="note-hint">"暂无已生成的讲义速读。"</p> }.into_any()
+//                             } else {
+//                                 view! {
+//                                     <ul class="doc-list">
+//                                         {decks.into_iter().map(|deck| {
+//                                             let count_text = format!("{} 页", deck.slide_count);
+//                                             let deck_title = deck.title.clone();
+//                                             let deck_dir_text = format!("目录: {}", deck.id);
+//                                             let deck_url = deck.url.clone();
+//                                             view! {
+//                                                 <li class="doc-item">
+//                                                     <div class="doc-heading" style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
+//                                                         <div>
+//                                                             <div style="font-weight: 700; font-size: 1.15rem; color: #29251f; margin-bottom: 4px;">
+//                                                                 {deck_title}
+//                                                             </div>
+//                                                             <div style="font-size: 0.85rem; color: #7a6e60;">
+//                                                                 <small style="background: #eadecd; padding: 2px 6px; border-radius: 4px; margin-right: 6px; font-weight: 600;">{count_text}</small>
+//                                                                 <span>{deck_dir_text}</span>
+//                                                             </div>
+//                                                         </div>
+//                                                         <div>
+//                                                             <A href=deck_url attr:class="button">
+//                                                                 "打开讲义速读 →"
+//                                                             </A>
+//                                                         </div>
+//                                                     </div>
+//                                                 </li>
+//                                             }
+//                                         }).collect_view()}
+//                                     </ul>
+//                                 }.into_any()
+//                             }
+//                         }
+//                     }}
+//                 </Transition>
+//             </section>
+//
+//             <section class="simulator-callout" style="margin-bottom: 2.5rem; background: #fffdf7; border: 1px solid #ebd3b0; border-radius: 10px; padding: 18px; display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap;">
+//                 <div>
+//                     <h3 style="margin: 0 0 6px 0; font-size: 1.1rem; color: #7c440a;">"🎮 历史情境模拟器"</h3>
+//                     <p style="margin: 0; font-size: 0.92rem; color: #8d5b25;">
+//                         "控制角色探索耶路撒冷、迦南、所罗门圣殿与现代西墙，通过历史 NPC 对话与剧情体验历史发展。"
+//                     </p>
+//                 </div>
+//                 <A href="/simulator/index.html" attr:rel="external" attr:class="button" attr:style="background: #a05a2c;">
+//                     "进入模拟器 ⚔️"
+//                 </A>
+//             </section>
+//
+//             <hr style="border: none; border-top: 1px solid #e0d7c7; margin: 2rem 0;" />
+//
+//             <section class="files-section">
+//                 <FilesView videos_only=false />
+//             </section>
+//         </div>
+//     }
+// }
+//
+// /// /member — the video shelf.
+// #[component]
+// pub fn VideosPage() -> impl IntoView {
+//     view! {
+//         <FilesView videos_only=true />
+//     }
+// }
 
 // ----------------------------------------------------------
 //  SERVER-ONLY: the raw axum handlers for /files and /upload.
@@ -792,5 +793,4 @@ pub mod ssr {
         }
     }
 }
-
 

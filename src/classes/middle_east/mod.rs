@@ -1,4 +1,4 @@
-use crate::classes::{Course, CourseWeek};
+use crate::classes::CourseWeek;
 
 pub mod israel_palestine_1;
 pub mod israel_palestine_2;
@@ -38,16 +38,3 @@ pub const WEEKS: &[CourseWeek] = &[
         slide_deck: "israel_palestine_2",
     },
 ];
-
-pub const COURSE: Course = Course {
-    id: 1,
-    title: "Middle East History",
-    notes: include_str!("notes.md"),
-    syllabus: include_str!("syllabus.md"),
-    content: include_str!("content.md"),
-    video_intro: include_str!("video_intro.md"),
-    slide_decks: &["israel_palestine_1", "israel_palestine_2"],
-    weeks: WEEKS,
-};
-
-pub const ALL_COURSES: &[Course] = &[COURSE];

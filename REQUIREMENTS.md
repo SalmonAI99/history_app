@@ -20,11 +20,8 @@ in 5th grade of primary school (~10–11 years old)**. This shapes the product:
 ### Reading app (core)
 - Read books online, chapter by chapter
 - User accounts (signup / login)
-- Per-user reading **progress** saved and restored
-- Per-user **notes and writings** saved
 
 ### Personal storage space ("their own storage, similarly accessed")
-- Each user has a private workspace: **writings, notes, images**
 - Strictly private: every query scoped by `user_id`; files served only
   after an access check (never a public static folder)
 
@@ -88,15 +85,15 @@ in 5th grade of primary school (~10–11 years old)**. This shapes the product:
 | 2 | Chapter pager in Rust — signals, events, lists, mobile CSS | ✅ done |
 | 3 | Server functions — load book from server (incl. real-browser test harness) | ✅ done |
 | 4 | Router — multiple pages and URLs (library + reader, URL-as-state) | ✅ done |
-| 5 | SQLite — schema: users+roles, documents, files, posts(+lang), subscriptions | ✅ done |
+| 5 | SQLite — schema: users+roles, files, posts(+lang), subscriptions | ✅ done |
 | 6 | Auth — signup/login, sessions, cookies (bcrypt, session tokens, 8/8 tests) | ✅ done |
 | 7 | ~~Bilingual~~ — **cut for simplicity** (2026-09); posts table keeps `lang` column for a possible comeback | ➖ skipped |
 | 8 | Public site — home, teacher, blog, news + admin publishing | ✅ done |
-| 9 | Workspace — progress + writings/notes (user-scoped) | ✅ done |
+| 9 | Workspace, notes and reading progress | ➖ removed |
 | 10 | File storage — uploads, private serving + access-controlled video | ✅ done (files e2e suite written but unrun, per user request) |
 | 11 | Payments (WeChat Pay/Alipay QR) + members-only materials | ⬜ |
 | 12 | PWA — manifest + service worker + phone install | ⬜ |
 | 13 | Deployment — HK or mainland+ICP, domain, HTTPS | ⬜ |
 | 14 | AI features — summaries (cached), explain-passage + tutor chat (streaming) | ⬜ |
 
-*Last updated: after Stage 3.*
+*Last updated: after removing the workspace, notes/progress, and Book World features.*

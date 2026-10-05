@@ -1,0 +1,114 @@
+// Your original style.css, extended with phone-friendly touches.
+// (This is SCSS, but plain CSS is valid SCSS — everything you know works.)
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: #f5f1e8;
+    color: #29251f;
+    font-family: Georgia, serif;
+}
+
+header {
+    padding: 20px;
+    text-align: center;
+    background: #29251f;
+    color: white;
+}
+
+header a {
+    color: white;
+    text-decoration: none;
+}
+
+// Header layout: title left, user nav right
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 22px;
+}
+
+.user-nav {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 15px;
+}
+
+.user-nav .username {
+    font-weight: bold;
+}
+
+.user-nav button {
+    font-size: 14px;
+    padding: 8px 14px;
+    min-height: 0;
+}
+
+// The login / signup page
+.auth-form {
+    max-width: 380px;
+    margin: 20px auto;
+}
+
+.auth-form h2 {
+    text-align: center;
+}
+
+.auth-form label {
+    display: block;
+    margin: 16px 0 6px;
+    font-size: 15px;
+}
+
+.auth-form input {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #c9bfa9;
+    border-radius: 6px;
+    background: #fffdf7;
+    color: inherit;
+}
+
+.auth-form button[type="submit"] {
+    width: 100%;
+    margin-top: 18px;
+}
+
+.auth-switch {
+    text-align: center;
+    margin-top: 18px;
+    font-size: 15px;
+}
+
+.auth-switch button {
+    background: none;
+    border: none;
+    color: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: 15px;
+    min-height: 0;
+    padding: 0;
+}
+
+.error {
+    color: #a03030;
+    text-align: center;
+}
+
+.ok {
+    color: #2a7a3a;
+    text-align: center;
+}
+

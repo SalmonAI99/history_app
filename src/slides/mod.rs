@@ -4,8 +4,7 @@
 
 pub mod access;
 pub mod model;
-pub mod israel_palestine_1;
-pub mod israel_palestine_2;
+pub mod toilet14;
 
 pub use access::*;
 use leptos::prelude::*;
@@ -13,10 +12,6 @@ use leptos_meta::Title;
 use leptos_router::{components::A, hooks::use_params_map};
 pub use model::{MediaItem, MediaType, Slide, SlideDeck};
 
-pub const ALL_DECKS: &[SlideDeck] = &[
-    israel_palestine_1::DECK,
-    israel_palestine_2::DECK,
-];
 
 pub fn find_deck(id: &str) -> Option<SlideDeck> {
     ALL_DECKS.iter().copied().find(|d| d.id == id)
@@ -70,63 +65,61 @@ pub fn SlidesIndexPage() -> impl IntoView {
             </header>
 
             <Transition fallback=move || view! { <p class="loading">"正在加载课程列表..."</p> }>
-                {move || match unlocked.get() {
-                    None => ().into_any(),
-                    Some(unlocked_list) => {
-                        view! {
-                            <div class="deck-grid" style="display: grid; gap: 20px;">
-                                {ALL_DECKS.iter().map(|deck| {
-                                    let deck_id = deck.id;
-                                    let deck_title = deck.title;
-                                    let slide_count = deck.slide_count;
-                                    let href = format!("/slides/{}", deck_id);
-                                    let is_unlocked = unlocked_list.contains(&deck_id.to_string());
+                {move || {
+                    let unlocked_list = unlocked.get().unwrap_or_default();
+                    view! {
+                        <div class="deck-grid" style="display: grid; gap: 20px;">
+                            {ALL_DECKS.iter().map(|deck| {
+                                let deck_id = deck.id;
+                                let deck_title = deck.title;
+                                let slide_count = deck.slide_count;
+                                let href = format!("/slides/{}", deck_id);
+                                let is_unlocked = unlocked_list.contains(&deck_id.to_string());
 
-                                    view! {
-                                        <div class="deck-card" style="background: #ffffff; border: 1px solid #e7e2d7; border-radius: 10px; padding: 20px; display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; box-shadow: 0 1px 4px rgba(0,0,0,0.03);">
-                                            <div>
-                                                <div style="font-weight: 700; font-size: 1.2rem; color: #29251f; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                                                    <span>{deck_title}</span>
-                                                    {if is_unlocked {
-                                                        view! {
-                                                            <span style="background: #dcfce7; color: #15803d; font-size: 0.78rem; font-weight: 600; padding: 2px 8px; border-radius: 4px;">
-                                                                "已解锁"
-                                                            </span>
-                                                        }.into_any()
-                                                    } else {
-                                                        view! {
-                                                            <span style="background: #fef3c7; color: #b45309; font-size: 0.78rem; font-weight: 600; padding: 2px 8px; border-radius: 4px;">
-                                                                "🔒 需购买 · ￥29.9"
-                                                            </span>
-                                                        }.into_any()
-                                                    }}
-                                                </div>
-                                                <div style="font-size: 0.88rem; color: #7a6e60; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                                                    <span style="background: #eadecd; padding: 2px 8px; border-radius: 4px; font-weight: 600; color: #4b3e2e;">
-                                                        {format!("{} 页讲义", slide_count)}
-                                                    </span>
-                                                    <span>{format!("ID: {}", deck_id)}</span>
-                                                    <span>"• 含多媒体视频/图片"</span>
-                                                </div>
+                                view! {
+                                    <div class="deck-card" style="background: #ffffff; border: 1px solid #e7e2d7; border-radius: 10px; padding: 20px; display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; box-shadow: 0 1px 4px rgba(0,0,0,0.03);">
+                                        <div>
+                                            <div style="font-weight: 700; font-size: 1.2rem; color: #29251f; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                                <span>{deck_title}</span>
+                                                {if is_unlocked {
+                                                    view! {
+                                                        <span style="background: #dcfce7; color: #15803d; font-size: 0.78rem; font-weight: 600; padding: 2px 8px; border-radius: 4px;">
+                                                            "已解锁"
+                                                        </span>
+                                                    }.into_any()
+                                                } else {
+                                                    view! {
+                                                        <span style="background: #fef3c7; color: #b45309; font-size: 0.78rem; font-weight: 600; padding: 2px 8px; border-radius: 4px;">
+                                                            "🔒 需购买 · ￥29.9"
+                                                        </span>
+                                                    }.into_any()
+                                                }}
                                             </div>
-                                            <div>
-                                                <A
-                                                    href=href
-                                                    attr:class="button"
-                                                    attr:style=if is_unlocked {
-                                                        "background: #1d4ed8; color: #ffffff; padding: 8px 18px; border-radius: 6px; text-decoration: none; font-weight: 600; display: inline-block;"
-                                                    } else {
-                                                        "background: #d97706; color: #ffffff; padding: 8px 18px; border-radius: 6px; text-decoration: none; font-weight: 600; display: inline-block;"
-                                                    }
-                                                >
-                                                    {if is_unlocked { "开始学习 →" } else { "查看讲义 (试读/购买) →" }}
-                                                </A>
+                                            <div style="font-size: 0.88rem; color: #7a6e60; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                                                <span style="background: #eadecd; padding: 2px 8px; border-radius: 4px; font-weight: 600; color: #4b3e2e;">
+                                                    {format!("{} 页讲义", slide_count)}
+                                                </span>
+                                                <span>{format!("ID: {}", deck_id)}</span>
+                                                <span>"• 含多媒体视频/图片"</span>
                                             </div>
                                         </div>
-                                    }
-                                }).collect_view()}
-                            </div>
-                        }.into_any()
+                                        <div>
+                                            <A
+                                                href=href
+                                                attr:class="button"
+                                                attr:style=if is_unlocked {
+                                                    "background: #1d4ed8; color: #ffffff; padding: 8px 18px; border-radius: 6px; text-decoration: none; font-weight: 600; display: inline-block;"
+                                                } else {
+                                                    "background: #d97706; color: #ffffff; padding: 8px 18px; border-radius: 6px; text-decoration: none; font-weight: 600; display: inline-block;"
+                                                }
+                                            >
+                                                {if is_unlocked { "开始学习 →" } else { "查看讲义 (试读/购买) →" }}
+                                            </A>
+                                        </div>
+                                    </div>
+                                }
+                            }).collect_view()}
+                        </div>
                     }
                 }}
             </Transition>
@@ -157,6 +150,38 @@ pub fn SlideDeckViewer(deck: SlideDeck) -> impl IntoView {
     view! {
         <Title text=page_title/>
         <div class="slide-deck-viewer" style="max-width: 860px; margin: 0 auto; padding: 24px 16px 60px 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', Georgia, serif; line-height: 1.8; color: #29251f;">
+            <header class="deck-header" style="margin-bottom: 24px; padding-bottom: 18px; border-bottom: 2px solid #e7e2d7; background: transparent; color: inherit; text-align: left; display: block;">
+                <div class="back-nav" style="margin-bottom: 12px; font-size: 14px;">
+                    <A href="/materials" attr:style="color: #6b7280; text-decoration: none;">"← 课程资料库"</A>
+                    <span style="color: #cbd5e1; margin: 0 8px;">"|"</span>
+                    <A href="/slides" attr:style="color: #6b7280; text-decoration: none;">"全部讲义"</A>
+                </div>
+                <h1 style="font-size: 28px; font-weight: 700; margin: 0 0 10px 0; color: #1e293b;">
+                    {deck.title}
+                </h1>
+                <div class="deck-meta" style="font-size: 14px; color: #6b7280; display: flex; gap: 14px; flex-wrap: wrap; align-items: center;">
+                    <span>{format!("📑 共 {} 页讲义", deck.slide_count)}</span>
+                    <span>"🎬 嵌入式视频/图档"</span>
+                    <Transition fallback=|| ()>
+                        {move || match access.get() {
+                            Some(st) if st.is_unlocked => {
+                                if st.is_admin {
+                                    view! { <span style="background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 4px; font-weight: 600; font-size: 13px;">"👑 管理员授权"</span> }.into_any()
+                                } else {
+                                    view! { <span style="background: #dcfce7; color: #15803d; padding: 2px 8px; border-radius: 4px; font-weight: 600; font-size: 13px;">"✅ 已解锁完整讲义"</span> }.into_any()
+                                }
+                            }
+                            Some(_) => view! {
+                                <span style="background: #fef3c7; color: #b45309; padding: 2px 8px; border-radius: 4px; font-weight: 600; font-size: 13px;">
+                                    "🔒 未解锁 (试读模式)"
+                                </span>
+                            }.into_any(),
+                            None => ().into_any(),
+                        }}
+                    </Transition>
+                </div>
+            </header>
+
             <Transition fallback=move || view! { <p class="loading">"正在加载讲义与权限..."</p> }>
                 {move || match access.get() {
                     None => ().into_any(),
@@ -165,34 +190,6 @@ pub fn SlideDeckViewer(deck: SlideDeck) -> impl IntoView {
 
                         view! {
                             <div>
-                                <header class="deck-header" style="margin-bottom: 24px; padding-bottom: 18px; border-bottom: 2px solid #e7e2d7; background: transparent; color: inherit; text-align: left; display: block;">
-                                    <div class="back-nav" style="margin-bottom: 12px; font-size: 14px;">
-                                        <A href="/materials" attr:style="color: #6b7280; text-decoration: none;">"← 课程资料库"</A>
-                                        <span style="color: #cbd5e1; margin: 0 8px;">"|"</span>
-                                        <A href="/slides" attr:style="color: #6b7280; text-decoration: none;">"全部讲义"</A>
-                                    </div>
-                                    <h1 style="font-size: 28px; font-weight: 700; margin: 0 0 10px 0; color: #1e293b;">
-                                        {deck.title}
-                                    </h1>
-                                    <div class="deck-meta" style="font-size: 14px; color: #6b7280; display: flex; gap: 14px; flex-wrap: wrap; align-items: center;">
-                                        <span>{format!("📑 共 {} 页讲义", deck.slide_count)}</span>
-                                        <span>"🎬 嵌入式视频/图档"</span>
-                                        {if is_unlocked {
-                                            if status.is_admin {
-                                                view! { <span style="background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 4px; font-weight: 600; font-size: 13px;">"👑 管理员授权"</span> }.into_any()
-                                            } else {
-                                                view! { <span style="background: #dcfce7; color: #15803d; padding: 2px 8px; border-radius: 4px; font-weight: 600; font-size: 13px;">"✅ 已解锁完整讲义"</span> }.into_any()
-                                            }
-                                        } else {
-                                            view! {
-                                                <span style="background: #fef3c7; color: #b45309; padding: 2px 8px; border-radius: 4px; font-weight: 600; font-size: 13px;">
-                                                    "🔒 未解锁 (试读模式)"
-                                                </span>
-                                            }.into_any()
-                                        }}
-                                    </div>
-                                </header>
-
                                 // If locked, display the Locked Hero Card with Purchase Callout:
                                 {if !is_unlocked {
                                     view! {

@@ -42,11 +42,6 @@ tower-http = { version = "0.6", features = ["trace", "fs"], optional = true }
 # Only needed by the browser (WASM) build:
 console_error_panic_hook = { version = "0.1", optional = true }
 wasm-bindgen = { version = "0.2", optional = true }
-# web-sys: world keyboard handling (skip keys while typing in chat).
-web-sys = { version = "0.3", features = ["HtmlElement", "HtmlCanvasElement", "CanvasRenderingContext2d", "CanvasGradient", "WebSocket", "MessageEvent", "ErrorEvent", "CloseEvent", "KeyboardEvent", "Window", "Document", "AudioContext", "AudioParam", "OscillatorNode", "OscillatorType", "GainNode", "AudioDestinationNode", "Location"], optional = true }
-uuid = { version = "1.27.0", features = ["v4", "js"] }
-futures = "0.3.34"
-js-sys = "0.3.106"
 
 [features]
 hydrate = [
@@ -54,7 +49,6 @@ hydrate = [
     "leptos/hydrate",
     "dep:console_error_panic_hook",
     "dep:wasm-bindgen",
-    "dep:web-sys",
 ]
 ssr = [
     "dep:axum",

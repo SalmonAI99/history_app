@@ -17,7 +17,7 @@ use serde::{Deserialize, Serialize};
 
 /// The logged-in user, as the browser is allowed to see it.
 /// NOTE: no password_hash here — never let secrets cross the wire.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 #[cfg_attr(feature = "ssr", derive(sqlx::FromRow))]
 pub struct User {
     pub id: i64,
@@ -153,6 +153,13 @@ pub mod ssr {
         .await?;
 
         Ok(user)
+    }
+
+    /// Require a valid session for protected server functions.
+    pub async fn require_user() -> Result<User, ServerFnError> {
+        current_user()
+            .await?
+            .ok_or_else(|| ServerFnError::ServerError("Please log in.".into()))
     }
 
     /// Pull our session token out of the request's Cookie header.
