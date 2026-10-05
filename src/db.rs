@@ -1,13 +1,4 @@
-// ============================================================
-//  db.rs — the STORAGE layer. Everything about the database:
-//  connecting, creating tables, and filling them the first time.
-//  This whole file is SERVER-ONLY (see lib.rs: cfg "ssr").
-//
-//  Key concepts taught here:
-//   - a table is like a spreadsheet: columns + rows
-//   - SQL is the language databases speak
-//   - "?" placeholders: the ONLY safe way to put values in queries
-// ============================================================
+// Server-only SQLite connection, schema creation, and initial data loading.
 
 use leptos::prelude::*;
 use sqlx::{Connection, SqliteConnection};
@@ -66,7 +57,7 @@ pub async fn init() -> Result<(), sqlx::Error> {
             id            INTEGER PRIMARY KEY AUTOINCREMENT,
             username      TEXT NOT NULL UNIQUE,
             password_hash TEXT NOT NULL,
-            role          TEXT NOT NULL DEFAULT 'student'  -- or 'admin'
+            role          TEXT NOT NULL DEFAULT 'student'  -- 'student', 'parent', or 'admin'
         )",
     )
     .execute(&mut conn)
@@ -174,6 +165,123 @@ pub async fn init() -> Result<(), sqlx::Error> {
     .execute(&mut conn)
     .await?;
 
+    // Learner profiles belong to an account. A student normally has one;
+    // a parent can add several child profiles.
+    sqlx::query(
+        "CREATE TABLE IF NOT EXISTS learner_profiles (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            owner_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            linked_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+            name          TEXT NOT NULL,
+            age_range     TEXT NOT NULL DEFAULT '',
+            gender        TEXT NOT NULL DEFAULT '',
+            created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+        )",
+    )
+    .execute(&mut conn)
+    .await?;
+
+    let (has_linked_user_id,): (i64,) = sqlx::query_as(
+        "SELECT COUNT(*) FROM pragma_table_info('learner_profiles') WHERE name = 'linked_user_id'",
+    )
+    .fetch_one(&mut conn)
+    .await?;
+    if has_linked_user_id == 0 {
+        sqlx::query("ALTER TABLE learner_profiles ADD COLUMN linked_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL")
+            .execute(&mut conn)
+            .await?;
+    }
+    sqlx::query(
+        "CREATE UNIQUE INDEX IF NOT EXISTS learner_profiles_linked_user_unique
+         ON learner_profiles(linked_user_id) WHERE linked_user_id IS NOT NULL",
+    )
+    .execute(&mut conn)
+    .await?;
+
+    sqlx::query(
+        "CREATE TABLE IF NOT EXISTS account_link_tokens (
+            token           TEXT PRIMARY KEY,
+            learner_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            expires_at      TEXT NOT NULL,
+            used_at         TEXT,
+            created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+        )",
+    )
+    .execute(&mut conn)
+    .await?;
+
+    // A purchase belongs to the account; learner_courses records which
+    // learner is taking that purchased course.
+    sqlx::query(
+        "CREATE TABLE IF NOT EXISTS course_purchases (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            course_id  INTEGER NOT NULL,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            UNIQUE(user_id, course_id)
+        )",
+    )
+    .execute(&mut conn)
+    .await?;
+
+    sqlx::query(
+        "CREATE TABLE IF NOT EXISTS learner_courses (
+            learner_profile_id INTEGER NOT NULL REFERENCES learner_profiles(id) ON DELETE CASCADE,
+            course_id           INTEGER NOT NULL,
+            assigned_at         TEXT NOT NULL DEFAULT (datetime('now')),
+            PRIMARY KEY(learner_profile_id, course_id)
+        )",
+    )
+    .execute(&mut conn)
+    .await?;
+
+    sqlx::query(
+        "CREATE TABLE IF NOT EXISTS course_progress (
+            learner_profile_id INTEGER NOT NULL REFERENCES learner_profiles(id) ON DELETE CASCADE,
+            course_id           INTEGER NOT NULL,
+            deck_id             TEXT NOT NULL,
+            last_slide          INTEGER NOT NULL DEFAULT 1,
+            updated_at          TEXT NOT NULL DEFAULT (datetime('now')),
+            PRIMARY KEY(learner_profile_id, course_id, deck_id)
+        )",
+    )
+    .execute(&mut conn)
+    .await?;
+
+    // Give existing student accounts a learner profile, then migrate their
+    // old deck grants to course-level purchases and enrollments.
+    sqlx::query(
+        "INSERT INTO learner_profiles (owner_user_id, name)
+         SELECT u.id, u.username FROM users u
+         WHERE u.role = 'student'
+           AND NOT EXISTS (SELECT 1 FROM learner_profiles lp WHERE lp.owner_user_id = u.id)",
+    )
+    .execute(&mut conn)
+    .await?;
+
+    for course in crate::classes::ALL_COURSES {
+        for deck_id in course.slide_decks {
+            sqlx::query(
+                "INSERT OR IGNORE INTO course_purchases (user_id, course_id)
+                 SELECT user_id, ? FROM course_access WHERE deck_id = ?",
+            )
+            .bind(course.id)
+            .bind(*deck_id)
+            .execute(&mut conn)
+            .await?;
+        }
+        sqlx::query(
+            "INSERT OR IGNORE INTO learner_courses (learner_profile_id, course_id)
+             SELECT lp.id, cp.course_id
+             FROM learner_profiles lp
+             JOIN course_purchases cp ON cp.user_id = lp.owner_user_id
+             WHERE cp.course_id = ?",
+        )
+        .bind(course.id)
+        .execute(&mut conn)
+        .await?;
+    }
+
     // First run only: fill the database from books/book.txt.
     let (count,): (i64,) = sqlx::query_as("SELECT COUNT(*) FROM books")
         .fetch_one(&mut conn)
@@ -266,45 +374,44 @@ fn is_chapter_heading(line: &str) -> bool {
 }
 
 fn parse_book(text: &str) -> (String, Vec<(String, Vec<String>)>) {
-    let mut chapters: Vec<(String, Vec<String>)> = Vec::new();
-    let mut book_title: Option<String> = None;
-    let mut title: Option<String> = None;
-    let mut paragraphs: Vec<String> = Vec::new();
-    let mut current_lines: Vec<String> = Vec::new();
+    let mut chapters = Vec::new();
+    let mut book_title = None;
+    let mut chapter_title = None;
+    let mut paragraphs = Vec::new();
+    let mut current_lines = Vec::new();
 
     for line in text.lines() {
-        let t = line.trim();
-        if t.is_empty() {
+        let line = line.trim();
+        if line.is_empty() {
             if !current_lines.is_empty() {
                 paragraphs.push(current_lines.join(" "));
                 current_lines.clear();
             }
-            } else if is_chapter_heading(t) {
-            match title.take() {
-                Some(t) => chapters.push((t, std::mem::take(&mut paragraphs))),
-                None => {
-                    // text before "Chapter 1" = the book title
-                    book_title = paragraphs.first().cloned();
-                    paragraphs.clear();
-                }
+        } else if is_chapter_heading(line) {
+            if !current_lines.is_empty() {
+                paragraphs.push(current_lines.join(" "));
+                current_lines.clear();
             }
-            title = Some(t.to_string());
+            if let Some(title) = chapter_title.take() {
+                chapters.push((title, std::mem::take(&mut paragraphs)));
+            } else if book_title.is_none() {
+                book_title = paragraphs.first().cloned();
+                paragraphs.clear();
+            }
+            chapter_title = Some(line.to_string());
         } else {
-            current_lines.push(t.to_string());
+            current_lines.push(line.to_string());
         }
     }
 
     if !current_lines.is_empty() {
         paragraphs.push(current_lines.join(" "));
     }
-    if let Some(t) = title {
-        chapters.push((t, paragraphs));
+    if let Some(title) = chapter_title {
+        chapters.push((title, paragraphs));
     }
 
-    (
-        book_title.unwrap_or_else(|| "Untitled".to_string()),
-        chapters,
-    )
+    (book_title.unwrap_or_else(|| "Untitled".to_string()), chapters)
 }
 
 // ----------------------------------------------------------

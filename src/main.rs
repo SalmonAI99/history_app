@@ -1,8 +1,4 @@
-// ============================================================
-//  main.rs — the SERVER entry point.
-//  This is the program you run: it listens on http://127.0.0.1:3000
-//  and serves your app. It only compiles with the "ssr" feature.
-// ============================================================
+// SSR server entry point: initializes runtime services and configures Axum/Leptos routes.
 
 #[cfg(feature = "ssr")]
 #[tokio::main]
@@ -52,14 +48,13 @@ async fn main() {
     let app = Router::new()
         // Stage 10: the gated byte routes. Session is checked
         // inside these handlers BEFORE any disk is touched.
-        .route("/files", get(bookreader::files::ssr::serve_file))
-        .route("/upload", post(bookreader::files::ssr::upload))
+        // .route("/files", get(bookreader::files::ssr::serve_file))
+        // .route("/upload", post(bookreader::files::ssr::upload))
 
         // Uploads may be large (videos) — raise the default 2MB cap.
         .layer(DefaultBodyLimit::max(512 * 1024 * 1024))
         // Interactive PPTX slide media assets & history simulator:
         .nest_service("/slides-media", tower_http::services::ServeDir::new("public/slides"))
-        .nest_service("/slides_media", tower_http::services::ServeDir::new("public/slides"))
         // ...hand it the Leptos routes (pages + server functions)...
         .leptos_routes(&leptos_options, routes, {
             let leptos_options = leptos_options.clone();

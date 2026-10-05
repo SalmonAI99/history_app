@@ -1,3 +1,5 @@
+//! Static post catalog and lookup helpers for blog and news pages.
+
 use leptos::prelude::*;
 pub mod autumn_post;
 pub mod welcome_post;

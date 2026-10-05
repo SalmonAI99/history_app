@@ -1,3 +1,5 @@
+//! Collects and renders videos referenced by course slide decks.
+
 use leptos::prelude::*;
 
 use super::slides::{MediaItem, MediaType, ALL_DECKS};

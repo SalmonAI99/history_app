@@ -1,3 +1,5 @@
+//! Search result types, server-side content search, and the search page.
+
 #[cfg(feature = "ssr")]
 use std::collections::HashSet;
 
@@ -180,20 +182,20 @@ pub async fn search_content(query: String) -> Result<Vec<SearchResult>, ServerFn
 
     // Uploaded file names are visible only to logged-in users, just like the
     // existing materials pages. The download endpoint checks access again.
-    if let Ok(files) = crate::files::list_files().await {
-        for file in files {
-            let category = if file.is_video() { "Video" } else { "Material" };
-            let fallback_excerpt = format!("{} · {}", category, file.size_label());
-            let href = file.href();
-            candidates.push(SearchCandidate {
-                title: file.original_name,
-                category: category.to_string(),
-                body: file.mime_type,
-                fallback_excerpt,
-                href,
-            });
-        }
-    }
+    // if let Ok(files) = crate::files::list_files().await {
+    //     for file in files {
+    //         let category = if file.is_video() { "Video" } else { "Material" };
+    //         let fallback_excerpt = format!("{} · {}", category, file.size_label());
+    //         let href = file.href();
+    //         candidates.push(SearchCandidate {
+    //             title: file.original_name,
+    //             category: category.to_string(),
+    //             body: file.mime_type,
+    //             fallback_excerpt,
+    //             href,
+    //         });
+    //     }
+    // }
 
     let mut results: Vec<RankedResult> = candidates
         .into_iter()

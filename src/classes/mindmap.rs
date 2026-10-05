@@ -1,3 +1,5 @@
+//! Interactive week-by-week course map component.
+
 use leptos::prelude::*;
 use leptos_router::components::A;
 

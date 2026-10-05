@@ -1,3 +1,5 @@
+//! Shared data types for slides, media items, and slide decks.
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum MediaType {
     Image,

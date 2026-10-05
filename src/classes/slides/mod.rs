@@ -1,6 +1,4 @@
-// ============================================================
-//  slides/mod.rs — Leptos SSR Slide Decks & Lecture Reader
-// ============================================================
+// Shared slide-deck catalog, models, access checks, and Leptos viewer components.
 
 pub mod access;
 pub mod model;
@@ -8,6 +6,7 @@ pub mod model;
 pub use access::*;
 use super::middle_east::{israel_palestine_1, israel_palestine_2};
 use super::toilet::toilet14;
+use crate::classes::learning::RecordCourseProgress;
 use leptos::prelude::*;
 use leptos_meta::Title;
 use leptos_router::components::A;
@@ -140,13 +139,41 @@ pub fn find_deck(id: &str) -> Option<SlideDeck> {
 
 /// The core Leptos SSR Slide Viewer Component with Access Control & Locked Preview
 #[component]
-pub fn SlideDeckViewer(deck: SlideDeck) -> impl IntoView {
+pub fn SlideDeckViewer(
+    deck: SlideDeck,
+    #[prop(default = 0)] learner_id: i64,
+) -> impl IntoView {
     let deck_id = deck.id.to_string();
+    let course_id = super::ALL_COURSES
+        .iter()
+        .find(|course| course.slide_decks.contains(&deck.id))
+        .map(|course| course.id)
+        .unwrap_or_default();
+    let access_deck_id = deck_id.clone();
     let access = Resource::new(
-        move || deck_id.clone(),
-        |id| async move { check_course_access(id).await.unwrap_or_default() },
+        move || (access_deck_id.clone(), learner_id),
+        |(id, learner_id)| async move { check_course_access(id, learner_id).await.unwrap_or_default() },
     );
     let buy_action = ServerAction::<BuyCourseAccess>::new();
+    let progress_action = ServerAction::<RecordCourseProgress>::new();
+    let progress_started = RwSignal::new(false);
+
+    // Opening a lesson records its first slide; selecting a slide in the
+    // inventory advances the learner's saved position.
+    let first_deck_id = deck_id.clone();
+    Effect::new(move |_| {
+        if !progress_started.get()
+            && access.get().is_some_and(|status| status.is_unlocked && !status.is_admin)
+        {
+            progress_started.set(true);
+            progress_action.dispatch(RecordCourseProgress {
+                learner_id,
+                course_id,
+                deck_id: first_deck_id.clone(),
+                slide_num: 1,
+            });
+        }
+    });
 
     // After purchase/unlock action succeeds, refetch access:
     Effect::new(move |_| {
@@ -203,7 +230,7 @@ pub fn SlideDeckViewer(deck: SlideDeck) -> impl IntoView {
                                                         "本课程讲义已锁定 (Course Locked)"
                                                     </h3>
                                                     <p class="locked-course-description">
-                                                        {format!("当前讲义共包含 {} 页精讲课件、历史背景深度剖析及随堂原版多媒体视频。未购买学员仅可免费浏览课程目录大纲与第 1 页试读内容。", deck.slide_count)}
+                                                        {format!("购买整门课程即可解锁其所有讲义，共包含 {} 页精讲课件、历史背景深度剖析及多媒体内容。未购买学员可以免费预览第 1 页。", deck.slide_count)}
                                                     </p>
                                                     {if status.is_logged_in {
                                                         let uname = status.username.clone().unwrap_or_default();
@@ -214,17 +241,18 @@ pub fn SlideDeckViewer(deck: SlideDeck) -> impl IntoView {
                                                                         {format!("当前学员账户：{}", uname)}
                                                                     </div>
                                                                     <div class="locked-account-price">
-                                                                        "课程特惠价：￥29.9 / 终身永久阅读"
+                                                                        "按课程购买；本原型暂不处理实际付款。"
                                                                     </div>
                                                                 </div>
                                                                 <div>
                                                                     <ActionForm action=buy_action>
                                                                         <input type="hidden" name="deck_id" value=deck.id/>
+                                                                        <input type="hidden" name="learner_id" value=learner_id/>
                                                                         <button
                                                                             type="submit"
                                                                             class="purchase-button"
                                                                         >
-                                                                            "💳 立即购买 / 解锁课程"
+                                                                            "解锁整门课程"
                                                                         </button>
                                                                     </ActionForm>
                                                                 </div>
@@ -304,9 +332,20 @@ pub fn SlideDeckViewer(deck: SlideDeck) -> impl IntoView {
                                                         let is_slide_locked = !is_unlocked && num > 1;
                                                         let has_video = slide.media.iter().any(|media| media.media_type == MediaType::Video);
                                                         let anchor = format!("#slide-{num}");
+                                                        let progress_action = progress_action.clone();
+                                                        let progress_deck_id = deck.id.to_string();
                                                         view! {
                                                             <li>
-                                                                <a class="deck-inventory-link" href=anchor>
+                                                                <a class="deck-inventory-link" href=anchor on:click=move |_| {
+                                                                    if is_unlocked {
+                                                                        progress_action.dispatch(RecordCourseProgress {
+                                                                            learner_id,
+                                                                            course_id,
+                                                                            deck_id: progress_deck_id.clone(),
+                                                                            slide_num: num as i64,
+                                                                        });
+                                                                    }
+                                                                }>
                                                                     <span class="deck-inventory-number">{num}</span>
                                                                     <span class="deck-inventory-title">{slide.title}</span>
                                                                     {if is_slide_locked {
@@ -356,7 +395,8 @@ pub fn SlideDeckViewer(deck: SlideDeck) -> impl IntoView {
                                                 <div>
                                                     {filtered.into_iter().map(|s| {
                                                         let is_slide_locked = !is_unlocked && s.num > 1;
-                                                        render_slide(deck.id, s, is_slide_locked)
+                                                        let is_preview = !is_unlocked && s.num == 1;
+                                                        render_slide(deck.id, s, is_slide_locked, is_preview)
                                                     }).collect_view()}
                                                 </div>
                                             }.into_any()
@@ -373,7 +413,7 @@ pub fn SlideDeckViewer(deck: SlideDeck) -> impl IntoView {
     }
 }
 
-fn render_slide(deck_id: &'static str, s: &Slide, is_locked: bool) -> impl IntoView {
+fn render_slide(deck_id: &'static str, s: &Slide, is_locked: bool, is_preview: bool) -> impl IntoView {
     let num = s.num;
     let title = s.title;
     let slide_id = format!("slide-{}", num);
@@ -390,7 +430,7 @@ fn render_slide(deck_id: &'static str, s: &Slide, is_locked: bool) -> impl IntoV
                             {format!("第 {} 页 🔒", num)}
                         </span>
                     }.into_any()
-                } else if num == 1 {
+                } else if is_preview {
                     view! {
                         <span class="slide-badge slide-badge--preview">
                             {format!("第 {} 页 (试读)", num)}
@@ -407,7 +447,7 @@ fn render_slide(deck_id: &'static str, s: &Slide, is_locked: bool) -> impl IntoV
                 <h2 class="slide-title">
                     {title}
                 </h2>
-                <a href="#toc" class="top-link">"↑ 目录"</a>
+                <a href="" class="top-link">"↑ 目录"</a>
             </div>
 
             {if is_locked {

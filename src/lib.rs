@@ -1,14 +1,8 @@
-// ============================================================
-//  lib.rs — the shared library used by BOTH builds.
-//  Right now it just exposes the `app` module and contains
-//  the browser entry point (`hydrate`).
-// ============================================================
+// Shared application modules for SSR and hydration builds, plus the browser `hydrate` entry point.
 
 pub mod app;
 pub mod auth;
-pub mod book;
 pub mod classes;
-pub mod files;
 pub mod posts;
 pub mod search;
 pub mod site;

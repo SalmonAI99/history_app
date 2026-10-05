@@ -1,3 +1,5 @@
+//! Leptos view content for the welcome blog post.
+
 use leptos::prelude::*;
 
 pub fn welcome_post() -> AnyView {

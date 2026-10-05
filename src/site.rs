@@ -1,11 +1,4 @@
-// ============================================================
-//  site.rs — the PUBLIC marketing pages + the admin publishing page.
-//    /         -> the pitch (home)
-//    /teacher  -> about the teacher
-//    /blog     -> post list          /blog/<slug> -> one post
-//    /news     -> news list          /news/<slug> -> one post
-//    /admin    -> admin info
-// ============================================================
+// Public home and teacher pages, blog/news listings and details, and the admin page.
 
 use leptos::prelude::*;
 use leptos_meta::Title;
@@ -25,13 +18,24 @@ pub fn HomePage() -> impl IntoView {
     view! {
         <Title text="星阅读 StarRead — 儿童阅读课程"/>
 
+
         <section class="hero">
-            <h2>"Give your child the magic of reading"</h2>
-            <p>"A guided reading course for 5th-grade students — stories they love, skills for life."</p>
-            <p>
-                <A attr:class="button" href="/library">"Start reading →"</A>
-            </p>
-        </section>
+        <video
+            class="hero-video"
+            autoplay
+            muted
+            loop
+            playsinline
+            preload="auto"
+        >
+            <source src="editorial_MASTER_1791176464742.mp4" type="video/mp4"/>
+        </video>
+
+        <div class="hero-content">
+            <h1>Explore History</h1>
+            <p>Travel through time and discover the past.</p>
+        </div>
+    </section>
 
         <section class="features">
             <div class="card">

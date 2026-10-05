@@ -1,3 +1,5 @@
+//! Middle East course outline and its lecture deck modules.
+
 use crate::classes::CourseWeek;
 
 pub mod israel_palestine_1;

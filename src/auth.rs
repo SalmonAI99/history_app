@@ -1,16 +1,4 @@
-// ============================================================
-//  auth.rs — who are you?
-//  The three ideas of this stage:
-//   1. PASSWORD HASHING: we never store a real password, only
-//      its bcrypt hash (a ONE-WAY fingerprint). Even if someone
-//      steals our database, they can't log in with the hashes.
-//   2. SESSIONS: after login, the server hands the browser a
-//      random token (a "session"). The token means nothing by
-//      itself — it's a key to a row in our sessions table.
-//   3. COOKIES: the browser stores the token and sends it with
-//      EVERY request automatically. That's how the server knows
-//      "oh, it's Emma again" without a new login every click.
-// ============================================================
+// User identity, signup/login/logout server functions, and server-side session lookup.
 
 use leptos::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -22,7 +10,7 @@ use serde::{Deserialize, Serialize};
 pub struct User {
     pub id: i64,
     pub username: String,
-    pub role: String, // "student" or "admin"
+    pub role: String, // "student", "parent", or "admin"
 }
 
 /// A vague "our fault" error for unexpected internal failures
@@ -37,8 +25,19 @@ fn internal_error() -> ServerFnError {
 // ----------------------------------------------------------
 
 #[server]
-pub async fn signup(username: String, password: String) -> Result<(), ServerFnError> {
+pub async fn signup(
+    username: String,
+    password: String,
+    role: String,
+    learner_name: String,
+    age_range: String,
+    gender: String,
+    child_username: Option<String>,
+    child_password: Option<String>,
+    link_token: Option<String>,
+) -> Result<(), ServerFnError> {
     use self::ssr::*;
+    use sqlx::Connection;
 
     let username = username.trim().to_string();
     if username.len() < 3 {
@@ -47,36 +46,111 @@ pub async fn signup(username: String, password: String) -> Result<(), ServerFnEr
     if password.len() < 6 {
         return Err(ServerFnError::ServerError("Password needs at least 6 characters.".into()));
     }
-
+    if !matches!(role.as_str(), "student" | "parent") {
+        return Err(ServerFnError::ServerError("Choose student or parent.".into()));
+    }
     // Hash the password — the ONLY thing we ever store.
     let hash = bcrypt::hash(&password, bcrypt::DEFAULT_COST).map_err(|_| internal_error())?;
 
     let mut conn = crate::db::db().await?;
+    let mut tx = conn.begin().await?;
 
     // The very first account becomes the admin (that's you, the teacher).
     let (count,): (i64,) = sqlx::query_as("SELECT COUNT(*) FROM users")
-        .fetch_one(&mut conn)
+        .fetch_one(&mut *tx)
         .await?;
-    let role = if count == 0 { "admin" } else { "student" };
+    // Preserve the prototype's first-account admin bootstrap. All later
+    // accounts can choose whether they are a student or a parent.
+    let actual_role = if count == 0 { "admin" } else { role.as_str() };
 
-    let result = sqlx::query("INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)")
+    let account = sqlx::query("INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)")
         .bind(&username)
         .bind(&hash)
-        .bind(&role)
-        .execute(&mut conn)
+        .bind(actual_role)
+        .execute(&mut *tx)
         .await;
+    let account = match account {
+        Ok(row) => row,
+        Err(_) => return Err(ServerFnError::ServerError("That username is taken.".into())),
+    };
+    let account_id = account.last_insert_rowid();
 
-    match result {
-        Ok(r) => {
-            // TELEMETRY: a line you'll grep when counting signups
-            tracing::info!(event = "signup", user = %username, role = %role, "new user registered");
-            create_session(r.last_insert_rowid()).await
-        }
-        Err(_) => {
-            tracing::warn!(event = "signup_fail", user = %username, "username already taken");
-            Err(ServerFnError::ServerError("That username is taken.".into()))
+    if actual_role == "student" {
+        validate_learner_details(&learner_name, &age_range, &gender)?;
+        sqlx::query(
+            "INSERT INTO learner_profiles (owner_user_id, name, age_range, gender)
+             VALUES (?, ?, ?, ?)",
+        )
+        .bind(account_id)
+        .bind(learner_name.trim())
+        .bind(&age_range)
+        .bind(&gender)
+        .execute(&mut *tx)
+        .await?;
+    } else if actual_role == "parent" {
+        let link_token = link_token.unwrap_or_default();
+        if !link_token.trim().is_empty() {
+            crate::classes::learning::attach_student_profile(
+                &mut *tx,
+                account_id,
+                link_token.trim(),
+                None,
+                learner_name.trim(),
+                &age_range,
+                &gender,
+            )
+            .await?;
+        } else {
+            validate_learner_details(&learner_name, &age_range, &gender)?;
+            let child_username = child_username.unwrap_or_default().trim().to_string();
+            let child_password = child_password.unwrap_or_default();
+            if child_username.len() < 3 || child_username.len() > 64 {
+                return Err(ServerFnError::ServerError("Enter a new child username (3–64 characters), or use a link code.".into()));
+            }
+            if child_password.len() < 6 {
+                return Err(ServerFnError::ServerError("Enter a child password of at least 6 characters, or use a link code.".into()));
+            }
+            let child_hash = bcrypt::hash(&child_password, bcrypt::DEFAULT_COST).map_err(|_| internal_error())?;
+            let child = sqlx::query("INSERT INTO users (username, password_hash, role) VALUES (?, ?, 'student')")
+                .bind(&child_username)
+                .bind(&child_hash)
+                .execute(&mut *tx)
+                .await;
+            let child = match child {
+                Ok(row) => row,
+                Err(_) => return Err(ServerFnError::ServerError("That child username is already taken.".into())),
+            };
+            sqlx::query(
+                "INSERT INTO learner_profiles (owner_user_id, linked_user_id, name, age_range, gender)
+                 VALUES (?, ?, ?, ?, ?)",
+            )
+            .bind(account_id)
+            .bind(child.last_insert_rowid())
+            .bind(learner_name.trim())
+            .bind(&age_range)
+            .bind(&gender)
+            .execute(&mut *tx)
+            .await?;
         }
     }
+
+    tx.commit().await?;
+    tracing::info!(event = "signup", user = %username, role = %actual_role, "new user registered");
+    create_session(account_id).await
+}
+
+#[cfg(feature = "ssr")]
+fn validate_learner_details(name: &str, age_range: &str, gender: &str) -> Result<(), ServerFnError> {
+    if name.trim().is_empty() || name.chars().count() > 80 {
+        return Err(ServerFnError::ServerError("Enter a learner name (up to 80 characters).".into()));
+    }
+    if !matches!(age_range, "under_8" | "8_10" | "11_13" | "14_17" | "18_plus") {
+        return Err(ServerFnError::ServerError("Choose an age range.".into()));
+    }
+    if !matches!(gender, "" | "girl" | "boy" | "another" | "prefer_not_to_say") {
+        return Err(ServerFnError::ServerError("Choose a valid gender option.".into()));
+    }
+    Ok(())
 }
 
 #[server]

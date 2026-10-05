@@ -1,6 +1,4 @@
-// ----------------------------------------------------------
-//  POST CONTENT COMPONENTS
-// ----------------------------------------------------------
+// Leptos view content for the autumn courses registration news post.
 
 use leptos::prelude::*;
 

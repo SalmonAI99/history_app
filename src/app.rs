@@ -1,21 +1,14 @@
-// ============================================================
-//  app.rs — your application.
-//  Stage 6: the app now knows WHO you are.
-//    /login  -> sign up / log in
-//    header  -> "Log in" link, or your username + "Log out"
-// ============================================================
+// Root Leptos UI: document shell, shared user state, navigation, and route table.
 
 use leptos::prelude::*;
 use leptos_meta::{provide_meta_context, MetaTags, Stylesheet, Title};
 use leptos_router::{
     components::{Route, Router, Routes, A},
-    hooks::{use_navigate, use_params_map},
+    hooks::{use_navigate},
     ParamSegment, StaticSegment,
 };
 use crate::auth::{get_user, Login, Logout, Signup, User};
 // use crate::book::{get_books, get_chapter};
-use crate::classes;
-use crate::files;
 use crate::search;
 use crate::site;
 
@@ -80,8 +73,9 @@ pub fn App() -> impl IntoView {
                     // <Route path=StaticSegment("slides") view=classes::slides::SlidesIndexPage/>
                     // <Route path=(StaticSegment("slides"), ParamSegment("id")) view=classes::slides::SlideDeckPage/>
                     <Route path=StaticSegment("teacher") view=site::TeacherPage/>
-                    <Route path=StaticSegment("classes") view=classes::ClassesPage/>
-                    <Route path=(StaticSegment("classes"), ParamSegment("id")) view=classes::ClassDetailPage/>
+                    <Route path=StaticSegment("classes") view=crate::classes::view::ClassesPage/>
+                    <Route path=(StaticSegment("classes"), ParamSegment("id")) view=crate::classes::view::ClassDetailPage/>
+                    <Route path=StaticSegment("profile") view=crate::classes::view::ProfilePage/>
                     <Route path=StaticSegment("blog") view=site::BlogPage/>
                     <Route path=(StaticSegment("blog"), ParamSegment("slug")) view=site::PostDetailPage/>
                     <Route path=StaticSegment("news") view=site::NewsPage/>
@@ -127,7 +121,7 @@ fn Nav() -> impl IntoView {
                         } else {
                             ().into_any()
                         }}
-                        <span class="username">{u.username}</span>
+                        <A href="/profile" attr:class="username">{u.username}</A>
                         // ActionForm = an HTML <form> that calls a server
                         // function when submitted. Our first form!
                         <ActionForm action=logout>
@@ -147,15 +141,16 @@ fn LoginPage() -> impl IntoView {
     let login_action = ServerAction::<Login>::new();
     let signup_action = ServerAction::<Signup>::new();
     let show_signup = RwSignal::new(false);
+    let signup_role = RwSignal::new("student".to_string());
 
-    // After a successful login/signup: reload the user, go to the library.
+    // After a successful login/signup: reload the user and open their profile.
     let navigate = use_navigate();
     Effect::new(move |_| {
         let ok = matches!(login_action.value().get(), Some(Ok(())))
             || matches!(signup_action.value().get(), Some(Ok(())));
         if ok {
             user.refetch();
-            navigate("/", Default::default());
+            navigate("/profile", Default::default());
         }
     });
 
@@ -172,6 +167,61 @@ fn LoginPage() -> impl IntoView {
                         </label>
                         <label>"Password (6+ characters)"
                             <input type="password" name="password" required/>
+                        </label>
+                        <label>"I am signing up as"
+                            <select
+                                name="role"
+                                required
+                                prop:value=move || signup_role.get()
+                                on:change=move |ev| signup_role.set(event_target_value(&ev))
+                            >
+                                <option value="student">"Student"</option>
+                                <option value="parent">"Parent or guardian"</option>
+                            </select>
+                        </label>
+                        <p class="auth-help">"For a student account, enter your details. For a parent account, enter the first child's details; use a link code if the child already has a student account."</p>
+                        <label>"Learner name"
+                            <input type="text" name="learner_name" maxlength="80"/>
+                        </label>
+                        <label>"Learner age range"
+                            <select name="age_range">
+                                <option value="under_8">"Under 8"</option>
+                                <option value="8_10">"8–10"</option>
+                                <option value="11_13" selected>"11–13"</option>
+                                <option value="14_17">"14–17"</option>
+                                <option value="18_plus">"18+"</option>
+                            </select>
+                        </label>
+                        {move || if signup_role.get() == "parent" {
+                            view! {
+                                <div class="parent-child-setup">
+                                    <p class="auth-help">"Already registered? Ask the student to generate a link code in their profile. Otherwise, create their login below."</p>
+                                    <label>"Existing student link code (optional)"
+                                        <input type="text" name="link_token" autocomplete="off"/>
+                                    </label>
+                                    <p class="auth-help">"Leave the code blank to create a new student login."</p>
+                                    <label>"New student username"
+                                        <input type="text" name="child_username" maxlength="64"/>
+                                    </label>
+                                    <label>"New student password (6+ characters)"
+                                        <input type="password" name="child_password"/>
+                                    </label>
+                                </div>
+                            }.into_any()
+                        } else {
+                            view! {
+                                <input type="hidden" name="link_token" value=""/>
+                                <input type="hidden" name="child_username" value=""/>
+                                <input type="hidden" name="child_password" value=""/>
+                            }.into_any()
+                        }}
+                        <label>"Gender (optional)"
+                            <select name="gender">
+                                <option value="">"Prefer not to say"</option>
+                                <option value="girl">"Girl / woman"</option>
+                                <option value="boy">"Boy / man"</option>
+                                <option value="another">"Another identity"</option>
+                            </select>
                         </label>
                         <button type="submit">"Sign up"</button>
                     </ActionForm>
@@ -218,116 +268,3 @@ fn LoginPage() -> impl IntoView {
     }
 }
 
-// ----------------------------------------------------------
-//  PAGE: THE LIBRARY (moved from "/" to "/library" in Stage 8)
-// ----------------------------------------------------------
-
-// #[component]
-// fn LibraryPage() -> impl IntoView {
-//     let books = Resource::new(|| (), |_| get_books());
-//
-//     view! {
-//         <h2>"Library"</h2>
-//         <Transition fallback=move || view! { <p class="loading">"Loading..."</p> }>
-//             {move || match books.get() {
-//                 None => ().into_any(),
-//                 Some(Err(_)) => view! {
-//                     <p>"Could not load the library."</p>
-//                 }.into_any(),
-//                 Some(Ok(books)) => view! {
-//                     <ul class="book-list">
-//                         {books.into_iter().map(|book| view! {
-//                             <li>
-//                                 <div class="book-row">
-//                                     <strong>{book.title.clone()}</strong>
-//                                     <A attr:class="button" href=format!("/book/{}/chapter/1", book.id)>
-//                                         "Open book →"
-//                                     </A>
-//                                 </div>
-//                             </li>
-//                         }).collect_view()}
-//                     </ul>
-//                 }.into_any(),
-//             }}
-//         </Transition>
-//     }
-// }
-//
-// // ----------------------------------------------------------
-// //  PAGE: THE READER (unchanged from Stage 4)
-// // ----------------------------------------------------------
-//
-// #[component]
-// fn ReaderPage() -> impl IntoView {
-//     let params = use_params_map();
-//
-//     let ids = move || {
-//         let p = params.read();
-//         let book_id = p.get("id").and_then(|s| s.parse::<i64>().ok()).unwrap_or(1);
-//         let chapter = p.get("chapter").and_then(|s| s.parse::<i64>().ok()).unwrap_or(1);
-//         (book_id, chapter)
-//     };
-//
-//     let chapter = Resource::new(
-//         move || ids(),
-//         move |(book_id, ch)| get_chapter(book_id, ch),
-//     );
-//
-//     view! {
-//         <div class="reader">
-//             <Transition fallback=move || view! { <p class="loading">"Loading..."</p> }>
-//                 {move || match chapter.get() {
-//                     None => ().into_any(),
-//
-//                     Some(Err(_)) => view! {
-//                         <p>"Sorry, this chapter could not be found."</p>
-//                         <p><A href="/library">"← Back to the library"</A></p>
-//                     }.into_any(),
-//
-//                     Some(Ok(page)) => {
-//                         let (book_id, ch) = ids();
-//                         let total = page.total_chapters;
-//
-//                         view! {
-//                             <h2 id="chapter-title">{page.title}</h2>
-//
-//                             <article id="book-content">
-//                                 {page.paragraphs
-//                                     .iter()
-//                                     .map(|p| view! { <p>{p.clone()}</p> })
-//                                     .collect_view()}
-//                             </article>
-//
-//                             <nav class="navigation">
-//                                 {if ch > 1 {
-//                                     view! {
-//                                         <A attr:class="button" href=format!("/book/{book_id}/chapter/{}", ch - 1)>
-//                                             "← Previous"
-//                                         </A>
-//                                     }.into_any()
-//                                 } else {
-//                                     view! { <span class="button disabled">"← Previous"</span> }.into_any()
-//                                 }}
-//
-//                                 <span id="page-number">{format!("{ch} / {total}")}</span>
-//
-//                                 {if ch < total {
-//                                     view! {
-//                                         <A attr:class="button" href=format!("/book/{book_id}/chapter/{}", ch + 1)>
-//                                             "Next →"
-//                                         </A>
-//                                     }.into_any()
-//                                 } else {
-//                                     view! { <span class="button disabled">"Next →"</span> }.into_any()
-//                                 }}
-//
-//                                 <A attr:class="button" href=format!("/book/{book_id}/chapter/1")>"Reset"</A>
-//                             </nav>
-//
-//                         }.into_any()
-//                     }
-//                 }}
-//             </Transition>
-//         </div>
-//     }
-// }
