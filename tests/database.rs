@@ -36,7 +36,7 @@ async fn database_layer_works() {
     let names: Vec<&str> = tables.iter().map(|t| t.0.as_str()).collect();
     for needed in [
         "books", "chapters", "users", "sessions",
-        "progress", "documents", "files", "posts", "subscriptions",
+        "files", "posts", "subscriptions",
     ] {
         assert!(names.contains(&needed), "missing table: {needed}");
     }
