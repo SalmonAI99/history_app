@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 pub mod mindmap;
 pub mod middle_east;
 pub mod slides;
+pub mod toilet;
 pub mod videos;
 
 use crate::auth::User;
@@ -305,7 +306,8 @@ pub fn ClassDetailPage() -> impl IntoView {
 
 
 use middle_east::WEEKS;
-pub const COURSE: Course = Course {
+
+pub const COURSE_MIDDLE_EAST: Course = Course {
     id: 1,
     title: "Middle East History",
     thumbnail: "/images/middle-east-course.jpg",
@@ -317,7 +319,27 @@ pub const COURSE: Course = Course {
     weeks: WEEKS,
 };
 
-pub const ALL_COURSES: &[Course] = &[COURSE];
+pub const COURSE_TOILET: Course = Course {
+    id: 2,
+    title: "toilet",
+    thumbnail: "/images/Fixing_toilet_in_ancient_times_20261004222952.jpg",
+    notes: include_str!("middle_east/notes.md"),
+    syllabus: include_str!("middle_east/description.md"),
+    content: include_str!("middle_east/course.md"),
+    video_intro: include_str!("middle_east/video_intro.md"),
+    slide_decks: &["toilet14"],
+    weeks: TOILET_WEEKS,
+};
+
+pub const TOILET_WEEKS: &[CourseWeek] = &[CourseWeek {
+    number: 1,
+    title: "Toilet history",
+    summary: "Explore the history and development of toilets through the lesson deck.",
+    topics: &["Toilet history and development"],
+    slide_deck: "toilet14",
+}];
+
+pub const ALL_COURSES: &[Course] = &[COURSE_MIDDLE_EAST, COURSE_TOILET];
 
 
 #[derive(Clone, Debug, PartialEq, Eq)]

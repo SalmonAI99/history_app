@@ -4,7 +4,7 @@
 // ============================================================
 
 use leptos::prelude::*;
-use crate::slides::model::*;
+use crate::classes::slides::model::*;
 
 pub const ID: &str = "toilet14";
 pub const TITLE: &str = "14用20000年修厕所2";
@@ -753,6 +753,6 @@ pub const fn get_deck() -> SlideDeck {
 #[component]
 pub fn DeckPage() -> impl IntoView {
     view! {
-        <crate::slides::SlideDeckViewer deck=get_deck() />
+        <crate::classes::slides::SlideDeckViewer deck=get_deck() />
     }
 }

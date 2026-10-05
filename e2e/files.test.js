@@ -1,6 +1,6 @@
 // Suite: files & video (Stage 10).
 // Uploads, the gated /files route, range requests, deletion.
-// Runs after workspace.test.js — test_parent (admin) exists.
+// The suite creates or logs into its own admin account.
 
 const BASE = 'http://127.0.0.1:3100';
 

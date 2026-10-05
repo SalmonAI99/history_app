@@ -5,6 +5,10 @@
     box-sizing: border-box;
 }
 
+html {
+    overflow-y: scroll;
+}
+
 body {
     margin: 0;
     background: #f5f1e8;
@@ -111,4 +115,3 @@ header h1 {
     color: #2a7a3a;
     text-align: center;
 }
-

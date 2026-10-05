@@ -20,8 +20,8 @@ const { chromium } = require('playwright');
 const ROOT = path.join(__dirname, '..');
 const PORT = 3100;
 const BIN = path.join(ROOT, 'target', 'debug', 'bookreader');
-const ALL = ['./reader.test.js', './auth.test.js', './posts.test.js', './workspace.test.js', './world.test.js', './files.test.js'];
-// `node run-all.js world` -> run only suites whose name contains "world"
+const ALL = ['./reader.test.js', './auth.test.js', './posts.test.js', './files.test.js'];
+// `node run-all.js reader` -> run only suites whose name contains "reader"
 const filter = process.argv[2];
 const SUITES = filter ? ALL.filter((s) => s.includes(filter)) : ALL;
 

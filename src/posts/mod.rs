@@ -30,6 +30,14 @@ pub const ALL_POSTS: &[Post] = &[
         search_text: "registration autumn reading courses enrollment children course schedule interactive zone Leptos component",
         render: autumn_post,
     },
+    Post {
+        slug: "autumn-courses-2",
+        title: "Autumn Courses Registration",
+        kind: "news",
+        published_at: "2026-10-02",
+        search_text: "registration autumn reading courses enrollment children course schedule interactive zone Leptos component",
+        render: autumn_post,
+    },
 ];
 
 pub fn get_posts(kind: &str) -> Vec<&'static Post> {

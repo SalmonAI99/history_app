@@ -7,15 +7,16 @@ pub mod model;
 
 pub use access::*;
 use super::middle_east::{israel_palestine_1, israel_palestine_2};
-use super::ALL_COURSES;
+use super::toilet::toilet14;
 use leptos::prelude::*;
 use leptos_meta::Title;
-use leptos_router::{components::A, hooks::use_params_map};
+use leptos_router::components::A;
 pub use model::{MediaItem, MediaType, Slide, SlideDeck};
 
 pub const ALL_DECKS: &[SlideDeck] = &[
     israel_palestine_1::DECK,
     israel_palestine_2::DECK,
+    toilet14::DECK,
 ];
 
 pub fn find_deck(id: &str) -> Option<SlideDeck> {
