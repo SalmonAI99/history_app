@@ -3,6 +3,7 @@
 
 pub mod app;
 pub mod auth;
+pub mod login;
 pub mod classes;
 pub mod posts;
 pub mod search;

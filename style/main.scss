@@ -1,9 +1,11 @@
 // SCSS entry point. Import order preserves the existing cascade.
 @use "base";
 @use "site";
+@use "home";
 @use "search";
 @use "classes";
 @use "site-pages";
+@use "teacher-page";
 @use "reader";
 @use "course-shell";
 @use "slide-deck";

@@ -4,19 +4,19 @@ use leptos::prelude::*;
 use leptos_meta::{provide_meta_context, MetaTags, Stylesheet, Title};
 use leptos_router::{
     components::{Route, Router, Routes, A},
-    hooks::{use_navigate},
     ParamSegment, StaticSegment,
 };
-use crate::auth::{get_user, Login, Logout, Signup, User};
+use crate::auth::{get_user, Logout, User};
 // use crate::book::{get_books, get_chapter};
 use crate::search;
 use crate::site;
+use crate::login::LoginPage;
 
 /// `shell` is the HTML "frame" around your app.
 pub fn shell(options: LeptosOptions) -> impl IntoView {
     view! {
         <!DOCTYPE html>
-        <html lang="en">
+        <html lang="zh-CN">
             <head>
                 <meta charset="utf-8"/>
                 <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -45,8 +45,15 @@ pub fn App() -> impl IntoView {
         <Title text="阅读之家"/>
 
         <Router>
-            <header>
-                <h1><A href="/">"阅读之家"</A></h1>
+            <header class="site-header">
+                <h1 class="site-brand">
+                    <A href="/">
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
+                        </svg>
+                        <span>"阅读之家"</span>
+                    </A>
+                </h1>
                 // Site navigation (the public pages from site.rs):
                 <nav class="site-nav">
                     <A href="/classes">"课程"</A>
@@ -55,9 +62,9 @@ pub fn App() -> impl IntoView {
                     <A href="/news">"活动"</A>
                 </nav>
                 <form class="global-search" action="/search" method="get" role="search">
-                    <label class="visually-hidden" for="global-search-input">"Search all content"</label>
-                    <input id="global-search-input" type="search" name="q" placeholder="Search books, lessons, articles..."/>
-                    <button type="submit">"Search"</button>
+                    <label class="visually-hidden" for="global-search-input">"搜索全站内容"</label>
+                    <input id="global-search-input" type="search" name="q" placeholder="搜索书籍、课程和文章…"/>
+                    <button type="submit">"搜索"</button>
                 </form>
                 <Nav/>
             </header>
@@ -114,12 +121,12 @@ fn Nav() -> impl IntoView {
                 {move || Suspend::new(async move { match user.await {
                     None => view! {
                         // guest
-                        <A href="/login">"Log in"</A>
+                        <A href="/login">"登录"</A>
                     }.into_any(),
                     Some(u) => view! {
                         // logged in — admins also see the publishing page link
                         {if u.role == "admin" {
-                            view! { <A href="/admin">"Admin"</A> }.into_any()
+                            view! { <A href="/admin">"管理后台"</A> }.into_any()
                         } else {
                             ().into_any()
                         }}
@@ -127,7 +134,7 @@ fn Nav() -> impl IntoView {
                         // ActionForm = an HTML <form> that calls a server
                         // function when submitted. Our first form!
                         <ActionForm action=logout>
-                            <button type="submit">"Log out"</button>
+                            <button type="submit">"退出登录"</button>
                         </ActionForm>
                     }.into_any(),
                 }})}
@@ -135,138 +142,3 @@ fn Nav() -> impl IntoView {
         </nav>
     }
 }
-
-/// /login — two forms (log in / sign up) with a toggle between them.
-#[component]
-fn LoginPage() -> impl IntoView {
-    let user = expect_context::<Resource<Option<User>>>();
-    let login_action = ServerAction::<Login>::new();
-    let signup_action = ServerAction::<Signup>::new();
-    let show_signup = RwSignal::new(false);
-    let signup_role = RwSignal::new("student".to_string());
-
-    // After a successful login/signup: reload the user and open their profile.
-    let navigate = use_navigate();
-    Effect::new(move |_| {
-        let ok = matches!(login_action.value().get(), Some(Ok(())))
-            || matches!(signup_action.value().get(), Some(Ok(())));
-        if ok {
-            user.refetch();
-            navigate("/profile", Default::default());
-        }
-    });
-
-    view! {
-        <div class="auth-form">
-            {move || if show_signup.get() {
-                view! {
-                    <h2>"Create your account"</h2>
-                    <ActionForm action=signup_action>
-                        // "name" MUST match the server function's argument names
-                        // (that's how the values find their way into the call).
-                        <label>"Username"
-                            <input type="text" name="username" required/>
-                        </label>
-                        <label>"Password (6+ characters)"
-                            <input type="password" name="password" required/>
-                        </label>
-                        <label>"I am signing up as"
-                            <select
-                                name="role"
-                                required
-                                prop:value=move || signup_role.get()
-                                on:change=move |ev| signup_role.set(event_target_value(&ev))
-                            >
-                                <option value="student">"Student"</option>
-                                <option value="parent">"Parent or guardian"</option>
-                            </select>
-                        </label>
-                        <p class="auth-help">"For a student account, enter your details. For a parent account, enter the first child's details; use a link code if the child already has a student account."</p>
-                        <label>"Learner name"
-                            <input type="text" name="learner_name" maxlength="80"/>
-                        </label>
-                        <label>"Learner age range"
-                            <select name="age_range">
-                                <option value="under_8">"Under 8"</option>
-                                <option value="8_10">"8–10"</option>
-                                <option value="11_13" selected>"11–13"</option>
-                                <option value="14_17">"14–17"</option>
-                                <option value="18_plus">"18+"</option>
-                            </select>
-                        </label>
-                        {move || if signup_role.get() == "parent" {
-                            view! {
-                                <div class="parent-child-setup">
-                                    <p class="auth-help">"Already registered? Ask the student to generate a link code in their profile. Otherwise, create their login below."</p>
-                                    <label>"Existing student link code (optional)"
-                                        <input type="text" name="link_token" autocomplete="off"/>
-                                    </label>
-                                    <p class="auth-help">"Leave the code blank to create a new student login."</p>
-                                    <label>"New student username"
-                                        <input type="text" name="child_username" maxlength="64"/>
-                                    </label>
-                                    <label>"New student password (6+ characters)"
-                                        <input type="password" name="child_password"/>
-                                    </label>
-                                </div>
-                            }.into_any()
-                        } else {
-                            view! {
-                                <input type="hidden" name="link_token" value=""/>
-                                <input type="hidden" name="child_username" value=""/>
-                                <input type="hidden" name="child_password" value=""/>
-                            }.into_any()
-                        }}
-                        <label>"Gender (optional)"
-                            <select name="gender">
-                                <option value="">"Prefer not to say"</option>
-                                <option value="girl">"Girl / woman"</option>
-                                <option value="boy">"Boy / man"</option>
-                                <option value="another">"Another identity"</option>
-                            </select>
-                        </label>
-                        <button type="submit">"Sign up"</button>
-                    </ActionForm>
-                    // If the server function returned an error, show it:
-                    {move || match signup_action.value().get() {
-                        // peel off the "error running server function:" wrapper
-                        Some(Err(ServerFnError::ServerError(msg))) => {
-                            view! { <p class="error">{msg}</p> }.into_any()
-                        }
-                        _ => ().into_any(),
-                    }}
-                    <p class="auth-switch">
-                        "Already have an account? "
-                        <button on:click=move |_| show_signup.set(false)>"Log in"</button>
-                    </p>
-                }
-                .into_any()
-            } else {
-                view! {
-                    <h2>"欢迎回来"</h2>
-                    <ActionForm action=login_action>
-                        <label>"Username"
-                            <input type="text" name="username" required/>
-                        </label>
-                        <label>"Password"
-                            <input type="password" name="password" required/>
-                        </label>
-                        <button type="submit">"Log in"</button>
-                    </ActionForm>
-                    {move || match login_action.value().get() {
-                        Some(Err(ServerFnError::ServerError(msg))) => {
-                            view! { <p class="error">{msg}</p> }.into_any()
-                        }
-                        _ => ().into_any(),
-                    }}
-                    <p class="auth-switch">
-                        "New here? "
-                        <button on:click=move |_| show_signup.set(true)>"Create an account"</button>
-                    </p>
-                }
-                .into_any()
-            }}
-        </div>
-    }
-}
-

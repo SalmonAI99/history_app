@@ -5,6 +5,20 @@
     box-sizing: border-box;
 }
 
+// Shared palette for the public site (header + home page).
+:root {
+    --site-ink: #1f2933;
+    --site-muted: #5e6b77;
+    --site-teal: #263d47;
+    --site-teal-dark: #1a2930;
+    --site-gold: #dfc79f;
+    --site-bronze: #936d39;
+    --site-cream: #fffaf0;
+    --site-paper: #ffffff;
+    --site-display: 'Noto Serif SC', 'Songti SC', 'STSong', Georgia, serif;
+    --site-body: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'PingFang SC', sans-serif;
+}
+
 html {
     overflow-y: scroll;
 }
@@ -14,48 +28,6 @@ body {
     background: #f5f1e8;
     color: #29251f;
     font-family: Georgia, serif;
-}
-
-header {
-    padding: 20px;
-    text-align: center;
-    background: #29251f;
-    color: white;
-}
-
-header a {
-    color: white;
-    text-decoration: none;
-}
-
-// Header layout: title left, user nav right
-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-}
-
-header h1 {
-    margin: 0;
-    font-size: 22px;
-}
-
-.user-nav {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    font-size: 15px;
-}
-
-.user-nav .username {
-    font-weight: bold;
-}
-
-.user-nav button {
-    font-size: 14px;
-    padding: 8px 14px;
-    min-height: 0;
 }
 
 // The login / signup page

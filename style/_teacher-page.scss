@@ -1,0 +1,271 @@
+// Teacher biography page. All selectors stay under .teacher-page so these
+// styles do not leak into course cards or other public-page sections.
+
+// The shared main element is a narrow content column on utility pages. The
+// teacher page owns full-width sections and applies its own inner max-widths.
+main:has(> .teacher-page) {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+}
+
+.teacher-page {
+    display: flow-root;
+    background: var(--site-cream);
+    color: var(--site-ink);
+    font-family: var(--site-body);
+    line-height: 1.6;
+}
+
+.teacher-page h1,
+.teacher-page h2,
+.teacher-page h3 {
+    font-family: var(--site-display);
+    font-weight: 600;
+}
+
+.teacher-profile-hero {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: center;
+    gap: 64px;
+    max-width: 1000px;
+    margin: 36px auto 120px;
+    padding: 0 24px;
+}
+
+.teacher-portrait-frame {
+    position: relative;
+    width: 100%;
+    max-width: 360px;
+    aspect-ratio: 3 / 4;
+    margin: 0 auto;
+}
+
+.teacher-portrait-frame::before {
+    position: absolute;
+    z-index: 0;
+    inset: -16px;
+    border: 1px solid var(--site-gold);
+    border-radius: 24px;
+    content: "";
+}
+
+.teacher-portrait {
+    position: relative;
+    z-index: 1;
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: 16px;
+    background: var(--site-teal);
+    object-fit: cover;
+    object-position: center 42%;
+}
+
+.teacher-profile-copy {
+    position: relative;
+}
+
+.teacher-eyebrow {
+    display: block;
+    margin-bottom: 16px;
+    color: var(--site-bronze);
+    font-size: 13px;
+    letter-spacing: 0.1em;
+}
+
+.teacher-profile-copy h1 {
+    margin: 0 0 24px;
+    color: var(--site-teal);
+    font-size: clamp(2.5rem, 5vw, 3rem);
+    line-height: 1.1;
+}
+
+.teacher-profile-bio {
+    margin: 0 0 32px;
+    color: var(--site-muted);
+    font-size: 18px;
+    line-height: 1.8;
+}
+
+.teacher-course-cta {
+    display: inline-flex;
+    align-items: center;
+    min-height: 42px;
+    padding: 8px 18px;
+    border: 1px solid var(--site-bronze);
+    border-radius: 999px;
+    color: var(--site-bronze);
+    font-size: 14px;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.teacher-course-cta:hover {
+    background: var(--site-bronze);
+    color: var(--site-paper);
+}
+
+.teacher-experience-section {
+    max-width: 1000px;
+    margin: 0 auto 120px;
+    padding: 0 24px;
+}
+
+.teacher-section-title {
+    margin: 0 0 48px;
+    color: var(--site-teal);
+    font-size: 32px;
+    text-align: center;
+}
+
+.teacher-experience-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 32px;
+}
+
+.teacher-experience-card {
+    position: relative;
+    overflow: hidden;
+    padding: 40px 32px;
+    border: 1px solid rgba(223, 199, 159, 0.3);
+    border-radius: 16px;
+    background: var(--site-paper);
+    box-shadow: 0 4px 20px rgba(38, 61, 71, 0.03);
+    transition: border-color 0.4s ease, box-shadow 0.4s ease, transform 0.4s ease;
+}
+
+.teacher-experience-card::after {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 4px;
+    background: var(--site-teal);
+    content: "";
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.4s ease;
+}
+
+.teacher-experience-card:hover {
+    border-color: var(--site-gold);
+    box-shadow: 0 16px 40px rgba(38, 61, 71, 0.08);
+    transform: translateY(-8px);
+}
+
+.teacher-experience-card:hover::after {
+    transform: scaleX(1);
+}
+
+.teacher-experience-card h3 {
+    margin: 0 0 12px;
+    color: var(--site-teal);
+    font-size: 20px;
+}
+
+.teacher-experience-card p {
+    margin: 0;
+    color: var(--site-muted);
+    font-size: 15px;
+    line-height: 1.7;
+}
+
+.teacher-experience-icon {
+    display: grid;
+    width: 44px;
+    height: 44px;
+    place-items: center;
+    margin-bottom: 24px;
+    border-radius: 12px;
+    background: var(--site-cream);
+    color: var(--site-bronze);
+}
+
+.teacher-experience-icon svg {
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.7;
+}
+
+.teacher-reveal {
+    // Apply the starting frame during the delay, then return to normal styles
+    // so hover transitions can take control without restarting this animation.
+    animation: teacher-rise-in 0.8s ease-out backwards;
+}
+
+@keyframes teacher-rise-in {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 920px) {
+    .teacher-profile-hero {
+        grid-template-columns: 1fr;
+        gap: 48px;
+        margin: 32px auto 80px;
+        text-align: center;
+    }
+
+    .teacher-portrait-frame {
+        width: 100%;
+        max-width: 360px;
+    }
+
+    .teacher-experience-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .teacher-profile-hero,
+    .teacher-experience-section {
+        padding-right: 20px;
+        padding-left: 20px;
+    }
+
+    .teacher-profile-hero {
+        margin: 24px auto 80px;
+    }
+
+    .teacher-experience-section {
+        margin-bottom: 80px;
+    }
+
+    .teacher-section-title {
+        margin-bottom: 32px;
+        font-size: 28px;
+    }
+
+    .teacher-experience-grid {
+        gap: 18px;
+    }
+
+    .teacher-experience-card {
+        padding: 30px 24px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .teacher-reveal {
+        animation: none;
+    }
+
+    .teacher-course-cta,
+    .teacher-experience-card,
+    .teacher-experience-card::after {
+        transition: none;
+    }
+}

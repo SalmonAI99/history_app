@@ -1,0 +1,588 @@
+// ---------- Home page (site.rs HomePage) ----------
+
+// Give the homepage the full page width (its sections center themselves).
+main:has(> .home) {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+}
+
+.home {
+    background: var(--site-cream);
+    color: var(--site-ink);
+    font-family: var(--site-body);
+    line-height: 1.6;
+
+    h1, h2, h3 {
+        font-family: var(--site-display);
+        font-weight: 700;
+        margin: 0;
+    }
+
+    p, ul, figure, blockquote {
+        margin: 0;
+    }
+}
+
+.home-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 16px;
+}
+
+.home-eyebrow {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    color: var(--site-bronze);
+    text-transform: uppercase;
+}
+
+// ---------- Buttons ----------
+.home-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 14px 28px;
+    border-radius: 999px;
+    font-size: 16px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.home-btn--primary {
+    background-color: var(--site-teal);
+    color: var(--site-cream);
+    border: 2px solid var(--site-teal);
+    box-shadow: 0 4px 12px rgba(38, 61, 71, 0.15);
+}
+
+.home-btn--primary:hover {
+    background-color: var(--site-teal-dark);
+    border-color: var(--site-teal-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(38, 61, 71, 0.2);
+}
+
+.home-btn--secondary {
+    background-color: transparent;
+    color: var(--site-teal);
+    border: 2px solid var(--site-gold);
+}
+
+.home-btn--secondary:hover {
+    border-color: var(--site-bronze);
+    color: var(--site-bronze);
+}
+
+// ---------- Hero: text + framed media ----------
+.home-hero {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 16px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 32px;
+    animation: rise-in 500ms ease-out both;
+}
+
+.home-hero-content {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.home .home-hero-headline {
+    font-size: clamp(38px, 4.4vw, 52px);
+    line-height: 1.15;
+    color: var(--site-teal);
+    letter-spacing: 0.02em;
+    // Hold the height of the longest line so the layout doesn't jump while
+    // typing (lines wrap to two rows on narrow screens).
+    min-height: 2.3em;
+}
+
+.home-hero-cursor {
+    display: inline-block;
+    width: 3px;
+    height: 1em;
+    margin-left: 4px;
+    vertical-align: -0.1em;
+    background-color: var(--site-teal);
+    animation: home-blink 1s step-end infinite;
+}
+
+@keyframes home-blink {
+    50% { opacity: 0; }
+}
+
+.home-hero-subline {
+    font-size: clamp(16px, 2.5vw, 18px);
+    max-width: 480px;
+    line-height: 1.7;
+}
+
+.home-hero-ctas {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 8px;
+}
+
+.home-hero-proof {
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid rgba(223, 199, 159, 0.5);
+    font-size: 14px;
+    color: var(--site-muted);
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: 12px;
+    row-gap: 4px;
+    letter-spacing: 0.02em;
+}
+
+.home-hero-media {
+    position: relative;
+    border-radius: 16px;
+    background-color: var(--site-teal);
+    aspect-ratio: 4 / 3;
+    box-shadow: 0 20px 40px rgba(38, 61, 71, 0.12);
+    overflow: hidden;
+}
+
+.home-hero-media video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+// Inner gold frame, museum/gallery style.
+.home-hero-frame {
+    position: absolute;
+    inset: 12px;
+    border: 1px solid rgba(223, 199, 159, 0.35);
+    border-radius: 8px;
+    pointer-events: none;
+    z-index: 2;
+}
+
+// ---------- Shared section layout ----------
+.home-section {
+    padding: 64px 0;
+}
+
+.home-section-header {
+    text-align: center;
+    max-width: 640px;
+    margin: 0 auto 48px;
+}
+
+.home .home-section-title {
+    font-size: clamp(28px, 4vw, 36px);
+    color: var(--site-teal);
+    margin-bottom: 16px;
+}
+
+.home-section-desc {
+    font-size: 18px;
+    color: var(--site-muted);
+}
+
+// ---------- Core abilities ----------
+.home-abilities {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 24px;
+}
+
+.home-ability {
+    background: var(--site-paper);
+    border-radius: 16px;
+    padding: 32px 28px;
+    box-shadow: 0 8px 24px rgba(31, 41, 51, 0.04);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.home-ability:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 28px rgba(31, 41, 51, 0.08);
+}
+
+// Line icons: bronze on cream; they invert to gold on teal when the card is hovered.
+.home-ability-icon {
+    width: 52px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+    color: var(--site-bronze);
+    background: var(--site-cream);
+    border: 1px solid var(--site-gold);
+    border-radius: 14px;
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+.home-ability-icon svg {
+    width: 26px;
+    height: 26px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.home-ability:hover .home-ability-icon {
+    color: var(--site-gold);
+    background: var(--site-teal);
+    border-color: var(--site-teal);
+}
+
+.home .home-ability h3 {
+    font-size: 20px;
+    color: var(--site-teal);
+    margin-bottom: 12px;
+}
+
+.home-ability p {
+    font-size: 15px;
+    color: var(--site-muted);
+}
+
+.home .home-abilities-quote {
+    margin-top: 56px;
+    text-align: center;
+    font-family: var(--site-display);
+    font-size: clamp(18px, 2.5vw, 22px);
+    color: var(--site-bronze);
+}
+
+// ---------- Teaching methods (dark band) ----------
+.home-methods {
+    background: var(--site-teal);
+    color: var(--site-cream);
+}
+
+.home-methods .home-section-title {
+    color: var(--site-cream);
+}
+
+.home-methods .home-section-desc {
+    color: var(--site-gold);
+}
+
+.home-method {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 32px;
+    align-items: center;
+}
+
+.home-method + .home-method {
+    margin-top: 64px;
+}
+
+.home .home-method-content h3 {
+    font-size: clamp(22px, 3vw, 28px);
+    color: var(--site-gold);
+    margin-bottom: 16px;
+}
+
+.home-method-content p {
+    font-size: 17px;
+    line-height: 1.8;
+    opacity: 0.9;
+}
+
+.home-method-visual {
+    border-radius: 16px;
+    overflow: hidden;
+    aspect-ratio: 4 / 3;
+    border: 1px solid rgba(223, 199, 159, 0.25);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+}
+
+.home-method-visual img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+// ---------- Reviews (horizontal slider) ----------
+.home-reviews-track {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 85%; // phones: the next card peeks in
+    gap: 20px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: 4px; // match the padding so the first card snaps to 0
+    scroll-behavior: smooth;
+    overscroll-behavior-x: contain;
+    // Room for the card shadows, which overflow would otherwise clip.
+    padding: 8px 4px 24px;
+    margin: -8px -4px 0;
+    scrollbar-width: none;
+}
+
+.home-reviews-track::-webkit-scrollbar {
+    display: none;
+}
+
+.home-reviews-track:focus-visible {
+    outline: 2px solid var(--site-gold);
+    outline-offset: 4px;
+    border-radius: 16px;
+}
+
+.home-review {
+    scroll-snap-align: start;
+    position: relative;
+    background: var(--site-paper);
+    padding: 32px;
+    border-radius: 16px;
+    border: 1px solid rgba(223, 199, 159, 0.3);
+    box-shadow: 0 8px 24px rgba(31, 41, 51, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.home-review-quote {
+    width: 36px;
+    height: 36px;
+    fill: var(--site-gold);
+    stroke: none;
+}
+
+.home-review blockquote {
+    font-size: 16px;
+    line-height: 1.8;
+    flex: 1;
+}
+
+.home-review figcaption {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(223, 199, 159, 0.35);
+    font-size: 14px;
+    color: var(--site-bronze);
+}
+
+.home-review figcaption strong {
+    display: block;
+    font-family: var(--site-display);
+    font-size: 16px;
+    color: var(--site-teal);
+}
+
+.home-review-avatar {
+    flex: none;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--site-cream);
+    border: 1px solid var(--site-gold);
+    color: var(--site-bronze);
+    font-family: var(--site-display);
+    font-size: 18px;
+}
+
+.home-reviews-controls {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.home-reviews.is-static .home-reviews-controls {
+    display: none;
+}
+
+// Ghost circle buttons, same teal outline as .home-btn--secondary's hover family.
+.home .home-slider-btn {
+    width: 44px;
+    height: 44px;
+    min-height: 0;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid var(--site-teal);
+    border-radius: 50%;
+    background: transparent;
+    color: var(--site-teal);
+    transition: all 0.2s ease;
+}
+
+.home .home-slider-btn:hover:not(:disabled) {
+    background: var(--site-teal);
+    color: var(--site-cream);
+    transform: none;
+}
+
+.home .home-slider-btn:disabled {
+    opacity: 0.3;
+}
+
+.home-slider-btn svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+// ---------- Contact & links ----------
+.home-contact {
+    background: var(--site-paper);
+    border-top: 1px solid rgba(223, 199, 159, 0.3);
+}
+
+.home-contact-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 48px;
+}
+
+.home .home-contact-info h2 {
+    font-size: clamp(26px, 3.5vw, 32px);
+    color: var(--site-teal);
+    margin-bottom: 16px;
+}
+
+.home-contact-info p {
+    margin-bottom: 28px;
+    color: var(--site-muted);
+}
+
+.home-contact-links {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 32px;
+}
+
+.home .home-contact-links h3 {
+    font-size: 18px;
+    color: var(--site-bronze);
+    margin-bottom: 12px;
+}
+
+.home-contact-links ul {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow-wrap: anywhere;
+}
+
+.home-contact-links a {
+    color: var(--site-ink);
+    text-decoration: none;
+}
+
+.home-contact-links a:hover {
+    color: var(--site-teal);
+    text-decoration: underline;
+}
+
+// ---------- Breakpoints ----------
+@media (min-width: 420px) {
+    .home-hero-ctas {
+        flex-direction: row;
+        align-items: center;
+    }
+
+    .home-contact-links {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (min-width: 640px) {
+    .home-reviews-track {
+        grid-auto-columns: calc((100% - 20px) / 2);
+    }
+}
+
+@media (min-width: 1024px) {
+    .home-reviews-track {
+        grid-auto-columns: calc((100% - 40px) / 3);
+    }
+}
+
+@media (min-width: 920px) {
+    .home-container {
+        padding: 0 24px;
+    }
+
+    .home-hero {
+        grid-template-columns: 1fr 1fr;
+        gap: 64px;
+        padding: 80px 48px;
+        min-height: 90vh;
+        align-items: center;
+    }
+
+    .home-hero-media {
+        aspect-ratio: 4 / 5;
+    }
+
+    .home .home-hero-headline {
+        min-height: 1.15em;
+    }
+
+    .home-section {
+        padding: 96px 0;
+    }
+
+    .home-method {
+        grid-template-columns: 1fr 1fr;
+        gap: 64px;
+    }
+
+    .home-method + .home-method {
+        margin-top: 80px;
+    }
+
+    // Alternate image left/right on wide screens.
+    .home-method:nth-child(odd) .home-method-content {
+        order: 2;
+    }
+
+    .home-contact-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 64px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .home-hero,
+    .home-hero-cursor {
+        animation: none;
+    }
+
+    .home-ability,
+    .home-ability-icon,
+    .home-btn,
+    .home .home-slider-btn {
+        transition: none;
+    }
+
+    .home-reviews-track {
+        scroll-behavior: auto;
+    }
+}

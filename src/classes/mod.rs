@@ -1,11 +1,6 @@
 //! Course catalog, course data types, and comment server functions.
 
 use leptos::prelude::*;
-use leptos_meta::Title;
-use leptos_router::{
-    components::A,
-    hooks::{use_params_map, use_query_map},
-};
 use serde::{Deserialize, Serialize};
 
 pub mod mindmap;
@@ -16,11 +11,7 @@ pub mod toilet;
 pub mod view;
 pub mod videos;
 
-use crate::auth::User;
-use self::slides::{SlideDeckViewer, ALL_DECKS};
 use self::mindmap::CourseMindMap;
-use self::videos::{collect_course_videos, CourseVideoLibrary};
-use self::view::{ClassDetailPage, ClassesPage};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[cfg_attr(feature = "ssr", derive(sqlx::FromRow))]
