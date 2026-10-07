@@ -33,6 +33,15 @@ pub async fn init() -> Result<(), sqlx::Error> {
 
     MIGRATOR.run(&mut conn).await?;
 
+    // Seed the database `classes` table with the static courses so that 
+    // FOREIGN KEY constraints (like `class_comments`) don't fail.
+    for course in crate::classes::ALL_COURSES {
+        sqlx::query("INSERT OR IGNORE INTO classes (id, title) VALUES (?, ?)")
+            .bind(course.id)
+            .bind(course.title)
+            .execute(&mut conn)
+            .await?;
+    }
 
     // for course in crate::classes::ALL_COURSES {
     //     for deck_id in course.slide_decks {
